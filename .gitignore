@@ -3,3 +3,5 @@ server/node_modules
 server/.env
 .idea
 node_modules
+server/package-lock.json
+client/package-lock.json
