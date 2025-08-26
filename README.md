@@ -93,3 +93,10 @@ More precisely, when running the tests, you will get 4 metrics:
 • Functions: functions coverage rate
 • Lines: coverage rate of lines of code
 • Branches: coverage rate of code execution paths
+| Métrique       | Ce qu’elle mesure                            |
+| -------------- | -------------------------------------------- |
+| **Statements** | Chaque instruction exécutable                |
+| **Branches**   | Chaque condition (if/else, switch, ternary…) |
+| **Functions**  | Chaque fonction définie                      |
+| **Lines**      | Chaque ligne de code                         |
+

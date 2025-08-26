@@ -12,7 +12,7 @@
     "nyc": "^17.1.0"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+    "dev": "concurrently --names \"SERVER,CLIENT\" --kill-others-on-fail \"npm run start --prefix server\" \"npm run dev --prefix client\"",
 
     "build": "npm run build --workspace=server && npm run build --workspace=client",
 
