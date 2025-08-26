@@ -1,5 +1,28 @@
 {
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "dependencies": {
     "node": "^24.6.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "nyc": "^17.1.0"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+
+    "build": "npm run build --workspace=server && npm run build --workspace=client",
+
+    "test:server": "npm run test --prefix server",
+    "test:client": "npm run test --prefix client",
+    "test": "npm run test:server && npm run test:client",
+
+    "merge-coverage": "npx nyc merge server/coverage client/coverage > coverage/coverage-merged.json",
+    "report-coverage": "npx nyc report --reporter=text-summary --reporter=html --report-dir=coverage --temp-dir=coverage",
+
+    "coverage": "npm test && npm run merge-coverage && npm run report-coverage"
   }
 }

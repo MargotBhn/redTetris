@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node ./dist/index.js",
-    "build": "tsc"
+    "build": "tsc",
+    "test": "jest --config ../jest.server.config.js"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +18,12 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
     "@types/socket.io": "^3.0.1",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.0.5",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.1",
     "typescript": "^5.9.2"
   }
 }

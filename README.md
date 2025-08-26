@@ -86,10 +86,8 @@ Testing helps:
 • Improve release reliability.
 • Accelerate delivery via automation.
 • Ensure product quality and long-term maintainability.
-JavaScript is now enterprise-ready. Like .NET or Java in the past, it’s the foundation
-of "Enterprise JavaScript". Testing pipelines are a core part of that, ensuring faulty versions are caught automatically.
-Unit tests must cover at least 70% of statements, functions, and lines, and 50% of
-branches.
+JavaScript is now enterprise-ready. Like .NET or Java in the past, it’s the foundation of "Enterprise JavaScript". Testing pipelines are a core part of that, ensuring faulty versions are caught automatically.
+Unit tests must cover at least 70% of statements, functions, and lines, and 50% of branches.
 More precisely, when running the tests, you will get 4 metrics:
 • Statements: statement coverage rate
 • Functions: functions coverage rate
