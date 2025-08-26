@@ -1,4 +1,5 @@
 import {useEffect, useState} from "react";
+import {io} from "socket.io-client";
 
 
 function Test() {
@@ -9,8 +10,13 @@ function Test() {
         fetch("http://localhost:3000/test")
             .then((res) => res.text())
             .then((data) => setMessage(data))
-    })
 
+        const newSocket = io("http://localhost:3000");
+
+        newSocket.on('connect', () => {
+            console.log('Connecté au socket:', newSocket.id);
+        });
+    }, [])
 
   return (
     <>
