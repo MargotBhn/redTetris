@@ -17,6 +17,12 @@ export function initSocket(server: HTTPServer) {
 
     io.on('connection', (socket) => {
         console.log("Socket connected", socket.id);
+        const message : any = "test message depuis le server"
+        io.emit('testMessage', message)
+    })
+
+    io.on('disconnect', (socket) => {
+        console.log("Socket disconnected ", socket.id);
     })
 
 }

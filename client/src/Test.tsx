@@ -16,6 +16,10 @@ function Test() {
         newSocket.on('connect', () => {
             console.log('Connecté au socket:', newSocket.id);
         });
+
+        newSocket.on('testMessage', (message) =>{
+            console.log(message);
+        })
     }, [])
 
   return (
