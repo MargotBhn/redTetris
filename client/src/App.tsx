@@ -3,8 +3,7 @@
 //import viteLogo from '/vite.svg'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import './App.css'
-
-import Test from './Test.tsx'
+import Test from './Test'
 
 function App() {
 //  const [count, setCount] = useState(0)
@@ -34,7 +33,7 @@ function App() {
 //    </>
     <BrowserRouter>
       <Routes>
-        <Route path={'/test'} element={Test} />
+        <Route path={'/test'} element={<Test />} />
       </Routes>
     </BrowserRouter>
   )
