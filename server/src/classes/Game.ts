@@ -1,5 +1,5 @@
-import Player from './Player';
-import Piece from './Piece';
+import Player from './Player.js';
+import Piece from './Piece.js';
 
 class Game {
     roomName: string;

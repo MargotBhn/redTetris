@@ -1,6 +1,6 @@
 import {useParams} from "react-router";
 import {useEffect, useState} from "react";
-// import {io} from "socket.io-client";
+import {io, Socket} from "socket.io-client";
 
 // import WaitingRoom from "./WaitingRoom.ts";
 
@@ -20,31 +20,14 @@ function urlErrorCheck(room: string | undefined, login: string | undefined): str
     return null
 }
 
-// type socketConnectionResult = {
-//     accepted: boolean;
-//     leader: boolean
-//     socketId: string | undefined
-// }
-
-// function socketConnection(room: string, login: string): socketConnectionResult {
-//     const newSocket = io("http://localhost:3000");
-//     newSocket.emit('joinRoom', room, login);
-//
-//     newSocket.on('connect', ({room}) => {
-//         console.log('Connecté au socket:', newSocket.id);
-//     });
-//
-//     const accepted = true
-//     const leader = false
-//
-//     return {accepted, leader}
-// }
 
 export default function GameLobby() {
     const {room, login} = useParams<{ room: string, login: string }>()
     const [status, setStatus] = useState<StatusState>()
-    const [errorMessage, setErrorMessage] = useState<string>("")
-    // const [leader, setLeader] = useState(false)
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const [socketId, setSocketId] = useState<string | undefined>(undefined)
+    const [socket, setSocket] = useState<Socket | null>(null)
+    const [isLeader, setIsLeader] = useState<boolean>(false)
 
 
     useEffect(() => {
@@ -56,11 +39,37 @@ export default function GameLobby() {
             return
         }
 
-        //check socket room availability
+        // Check room availability
+        if (room && login && !socket) {
+            const newSocket = io("http://localhost:3000");
+            setSocket(newSocket)
+            setSocketId(newSocket.id)
+        }
 
-
-        setStatus("Waiting")
     }, [room, login]);
+
+    useEffect(() => {
+        if (socket) {
+            socket.on('connect', () => {
+                setSocketId(socket.id);
+                socket.emit('joinRoom', room, login, socket.id);
+            });
+
+
+            socket.on('joinError', () => {
+                setErrorMessage("This room is not available. A game is already in progress.")
+                setStatus("Error")
+            })
+
+            socket.on('joinedSuccess', (isLeaderGame: boolean) => {
+                setErrorMessage(null)
+                setIsLeader(isLeaderGame)
+                setStatus("Waiting")
+            })
+
+        }
+    }, [socket]);
+
 
 
     if (status === "Error") {
@@ -72,17 +81,20 @@ export default function GameLobby() {
             </>
         )
     }
-    // } else if (status === "Waiting" && room && login) {
-    //     return (
-    //         <>
-    //             <WaitingRoom room={room} login={login} leader={leader}/>
-    //         </>
-    //     )
+        // } else if (status === "Waiting" && room && login) {
+        //     return (
+        //         <>
+        //             <WaitingRoom room={room} login={login} leader={leader} socketId={socketId}/>
+        //         </>
+        //     )
     // }
-    return (
+    else return (
         <>
             <p>Hello {login}</p>
             <p>You joined Room {room}</p>
+            <p>socket = {socketId}</p>
+            <p>leader = {String(isLeader)}</p>
+            <p>Status: {status}</p>
         </>
     )
 }

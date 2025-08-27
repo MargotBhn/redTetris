@@ -1,18 +1,18 @@
-import {Socket} from 'socket.io';
-
 type Board = number[][];
 
 class Player {
     name: string;
-    socketId: Socket;
+    socketId: string;
     board: Board;
     isAlive: boolean;
+    isLeader: boolean;
 
-    constructor(name: string, socket: Socket) {
+    constructor(name: string, socketId: string, isLeader: boolean) {
         this.name = name;
-        this.socketId = socket;
+        this.socketId = socketId;
         this.board = this.initBoard();
         this.isAlive = true;
+        this.isLeader = isLeader
     }
 
     private initBoard(): Board {
