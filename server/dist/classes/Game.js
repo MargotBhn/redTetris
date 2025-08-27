@@ -1,3 +1,4 @@
+export {};
 // import Player from './Player';
 // import Piece from './Piece';
 //
@@ -43,3 +44,4 @@
 // }
 //
 // export default Game;
+//# sourceMappingURL=Game.js.map

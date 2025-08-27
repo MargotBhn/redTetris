@@ -1,14 +1,15 @@
 //import { useState } from 'react'
 //import reactLogo from './assets/react.svg'
 //import viteLogo from '/vite.svg'
-import { BrowserRouter, Route, Routes } from 'react-router'
+import {BrowserRouter, Route, Routes} from 'react-router'
 import './App.css'
 import Test from './Test'
+import GameLobby from "./Components/GameLobby.tsx";
 
 function App() {
 //  const [count, setCount] = useState(0)
 
-  return (
+    return (
 //    <>
 //      <div>
 //        <a href="https://vite.dev" target="_blank">
@@ -31,12 +32,13 @@ function App() {
 //        Click on the Vite and React logos to learn more
 //      </p>
 //    </>
-    <BrowserRouter>
-      <Routes>
-        <Route path={'/test'} element={<Test />} />
-      </Routes>
-    </BrowserRouter>
-  )
+        <BrowserRouter>
+            <Routes>
+                <Route path={'/test'} element={<Test/>}/>
+                <Route path={'/:room/:login'} element={< GameLobby/>}/>
+            </Routes>
+        </BrowserRouter>
+    )
 }
 
 export default App

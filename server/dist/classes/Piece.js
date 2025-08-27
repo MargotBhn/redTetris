@@ -1,3 +1,4 @@
+export {};
 // type Matrix = number[][];
 //
 // interface Position {
@@ -60,3 +61,4 @@
 // }
 //
 // export default Piece;
+//# sourceMappingURL=Piece.js.map
