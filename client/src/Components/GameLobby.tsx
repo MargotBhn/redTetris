@@ -1,12 +1,13 @@
 import {useParams} from "react-router";
 import {useEffect, useState} from "react";
+// import {io} from "socket.io-client";
 
 // import WaitingRoom from "./WaitingRoom.ts";
 
 type StatusState = "Error" | "Waiting" | "Game";
 
 
-function UrlErrorCheck(room: string | undefined, login: string | undefined): string | null {
+function urlErrorCheck(room: string | undefined, login: string | undefined): string | null {
     if (room === undefined || login === undefined) {
         return "Room or login missing in the url";
     }
@@ -19,6 +20,26 @@ function UrlErrorCheck(room: string | undefined, login: string | undefined): str
     return null
 }
 
+// type socketConnectionResult = {
+//     accepted: boolean;
+//     leader: boolean
+//     socketId: string | undefined
+// }
+
+// function socketConnection(room: string, login: string): socketConnectionResult {
+//     const newSocket = io("http://localhost:3000");
+//     newSocket.emit('joinRoom', room, login);
+//
+//     newSocket.on('connect', ({room}) => {
+//         console.log('Connecté au socket:', newSocket.id);
+//     });
+//
+//     const accepted = true
+//     const leader = false
+//
+//     return {accepted, leader}
+// }
+
 export default function GameLobby() {
     const {room, login} = useParams<{ room: string, login: string }>()
     const [status, setStatus] = useState<StatusState>()
@@ -27,12 +48,18 @@ export default function GameLobby() {
 
 
     useEffect(() => {
-        const urlError = UrlErrorCheck(room, login)
+        //check error inside URL
+        const urlError = urlErrorCheck(room, login)
         if (urlError) {
             setErrorMessage(urlError)
             setStatus("Error")
-        } else
-            setStatus("Waiting")
+            return
+        }
+
+        //check socket room availability
+
+
+        setStatus("Waiting")
     }, [room, login]);
 
 
@@ -45,7 +72,7 @@ export default function GameLobby() {
             </>
         )
     }
-    // } else if (status === StatusState.Waiting && room && login) {
+    // } else if (status === "Waiting" && room && login) {
     //     return (
     //         <>
     //             <WaitingRoom room={room} login={login} leader={leader}/>
