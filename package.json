@@ -23,7 +23,7 @@
     "merge-coverage": "npx nyc merge server/coverage client/coverage > coverage/coverage-merged.json",
     "report-coverage": "npx nyc report --reporter=text-summary --reporter=html --report-dir=coverage --temp-dir=coverage",
 
-    "coverage": "npm test && npm run merge-coverage && npm run report-coverage",
+    "coverage": "npm run test && npm run merge-coverage && npm run report-coverage",
 
     "install:all": "npm install --prefix client && npm install --prefix server && npm install"
 
