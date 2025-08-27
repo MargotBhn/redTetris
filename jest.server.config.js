@@ -13,4 +13,9 @@ module.exports = {
       lines: 70,
     },
   },
+  globals: {
+    "ts-jest": {
+      tsconfig: "<rootDir>/server/tsconfig.json", // 👈 IMPORTANT
+    },
+  },
 };
