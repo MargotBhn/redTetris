@@ -11,7 +11,6 @@ export function sendListPlayers(
 }
 
 export function updateNewLeader(io: Server, game: Game, socketId: string) {
-    console.log("server update game");
     io.to(game.roomName).emit("newLeader", socketId);
 }
 
@@ -19,5 +18,15 @@ export function handleGame(
     socket: Socket,
     games: Map<string, Game>,
     io: Server) {
-    console.log("handle game", socket.id, games, io);
+    socket.on('startGame', (room: string) => {
+        const game = games.get(room);
+        console.log("handles game = ", game);
+        if (game) {
+            game.started = true;
+            io.to(room).emit("gameStarts");
+        }
+        console.log("handles game then = ", game);
+    })
+
 }
+

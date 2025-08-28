@@ -11,16 +11,17 @@ export function handlePlayerConnection(
 
     socket.on('joinRoom', (room: string, login: string, socketId: string) => {
         let game = games.get(room);
+        console.log(login, ' connected ', room, ' is free ? ', !game?.started)
 
         if (game && game.started) {
-            socket.emit('joinedError', false, false)
+            console.log('game started');
+            socket.emit('joinError')
             return
         }
 
         if (!game) {
             game = new Game(room);
             games.set(room, game);
-            console.log('Game created')
         }
 
         let isLeader = false
@@ -58,11 +59,11 @@ export function handlePlayerConnection(
                 else {
                     console.log(leavingPlayer!.name, " left the game")
                     if (leavingPlayer!.isLeader) {
+                        console.log('server : leavingPlayer was leader');
                         game.players[0]!.isLeader = true
                         updateNewLeader(io, game, game.players[0]!.socketId)
                     }
                     sendListPlayers(game, io)
-
                 }
             }
         })

@@ -1,11 +1,12 @@
 import {useParams} from "react-router";
 import {useEffect, useState} from "react";
 import {io, Socket} from "socket.io-client";
+import WaitingRoom from "./WaitingRoom.tsx";
 
 
 // import WaitingRoom from "./WaitingRoom.tsx";
 
-type StatusState = "Error" | "Waiting" | "Game";
+type StatusState = "Error" | "Waiting" | "Game" | "EndGame";
 
 
 function urlErrorCheck(room: string | undefined, login: string | undefined): string | null {
@@ -54,6 +55,7 @@ export default function GameLobby() {
             socket.on('connect', () => {
                 setSocketId(socket.id);
                 socket.emit('joinRoom', room, login, socket.id);
+
             });
 
 
@@ -69,17 +71,26 @@ export default function GameLobby() {
             });
 
             socket.on('newLeader', (socketIdLeader: string) => {
-                console.log('client update leader')
                 if (socketId === socketIdLeader)
                     setIsLeader(true)
             })
 
             socket.on('updatePlayersList', (players: string[]) => {
-                console.log('client update players list')
                 setListPlayers(players)
             })
+
+            socket.on('gameStarts', () => {
+                console.log('status Game')
+                setStatus('Game')
+            })
         }
-    }, [socket]);
+    }, [socket, socketId]);
+
+    const startGame = () => {
+        if (socket) {
+            socket.emit('startGame', room);
+        }
+    }
 
 
     if (status === "Error") {
@@ -90,22 +101,17 @@ export default function GameLobby() {
                 <p>http://localhost:5173/room/player_name</p>
             </>
         )
+    } else if (status === "Waiting") {
+        return (
+            <>
+                <WaitingRoom leader={isLeader} listPlayers={listPlayers} startGame={startGame}/>
+            </>
+        )
+    } else if (status === "Game") {
+        return (
+            <p>Let's Game</p>
+        )
+    } else {
+        return (<>Status empty</>)
     }
-        // } else if (status === "Waiting" && room && login) {
-        //     return (
-        //         <>
-        //             <WaitingRoom room={room} login={login} leader={leader} socketId={socketId}/>
-        //         </>
-        //     )
-    // }
-    else return (
-        <>
-            <p>Hello {login}</p>
-            <p>You joined Room {room}</p>
-            <p>socket = {socketId}</p>
-            <p>leader = {String(isLeader)}</p>
-            <p>Status: {status}</p>
-            <p>players : {listPlayers}</p>
-        </>
-    )
 }
