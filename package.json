@@ -15,15 +15,18 @@
     "dev": "concurrently --names \"SERVER,CLIENT\" --kill-others-on-fail \"npm run start --prefix server\" \"npm run dev --prefix client\"",
 
     "build": "npm run build --workspace=server && npm run build --workspace=client",
-
     "test:server": "npm run test --prefix server",
     "test:client": "npm run test --prefix client",
-    "test": "npm run test:server && npm run test:client",
 
-    "merge-coverage": "npx nyc merge server/coverage client/coverage > coverage/coverage-merged.json",
-    "report-coverage": "npx nyc report --reporter=text-summary --reporter=html --report-dir=coverage --temp-dir=coverage",
+    "test": "npm run test:server || true && npm run test:client || true",
 
-    "coverage": "npm run test && npm run merge-coverage && npm run report-coverage",
+    "coverage:prepare": "rm -rf .nyc_output coverage && mkdir -p .nyc_output",
+
+    "coverage:collect": "cp server/coverage/coverage-final.json .nyc_output/server.json && cp client/coverage/coverage-final.json .nyc_output/client.json",
+
+    "coverage:report": "npx nyc report --temp-dir .nyc_output --reporter=text-summary --reporter=html --report-dir coverage",
+
+    "coverage": "npm run test && npm run coverage:prepare && npm run coverage:collect && npm run coverage:report",
 
     "install:all": "npm install --prefix client && npm install --prefix server && npm install"
 

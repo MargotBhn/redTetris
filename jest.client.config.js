@@ -16,5 +16,6 @@ module.exports = {
   setupFilesAfterEnv: ["<rootDir>/client/src/setupTests.ts"],
   moduleNameMapper: {
     "\\.(css|less|scss|sass)$": "identity-obj-proxy"
-  }
+  },
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
 };
