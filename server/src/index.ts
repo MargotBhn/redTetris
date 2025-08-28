@@ -1,6 +1,6 @@
 import {createServer} from "node:http";
 import app from "./app.js";
-import {initSocket} from "./socket.js";
+import {initSocket} from "./sockets/initSocket.js";
 
 const PORT = 3000;
 

@@ -1,5 +1,5 @@
 import {createServer} from 'node:http';
-import {initSocket} from '../socket';
+import {initSocket} from '../sockets/initSocket';
 import {io as Client, Socket} from 'socket.io-client';
 
 let httpServer: ReturnType<typeof createServer>;

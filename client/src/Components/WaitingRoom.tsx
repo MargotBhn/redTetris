@@ -7,7 +7,6 @@
 // }
 //
 // export default function WaitingRoom({room, login, leader}: WaitingRoomProps) {
-//     const [listPlayers, setListPlayers] = useState([]);
 //
 //
 // }

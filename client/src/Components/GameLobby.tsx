@@ -2,7 +2,8 @@ import {useParams} from "react-router";
 import {useEffect, useState} from "react";
 import {io, Socket} from "socket.io-client";
 
-// import WaitingRoom from "./WaitingRoom.ts";
+
+// import WaitingRoom from "./WaitingRoom.tsx";
 
 type StatusState = "Error" | "Waiting" | "Game";
 
@@ -12,7 +13,7 @@ function urlErrorCheck(room: string | undefined, login: string | undefined): str
         return "Room or login missing in the url";
     }
     if (isNaN(Number(room)) || !Number.isInteger(Number(room))) {
-        return "Invalid room. Must be a number between 1 and 100";
+        return "Invalid room. Must be a number ";
     }
     if (login.length < 3 || login.length > 20) {
         return "Invalid player name. Must be between 3 and 20 characters";
@@ -28,7 +29,7 @@ export default function GameLobby() {
     const [socketId, setSocketId] = useState<string | undefined>(undefined)
     const [socket, setSocket] = useState<Socket | null>(null)
     const [isLeader, setIsLeader] = useState<boolean>(false)
-
+    const [listPlayers, setListPlayers] = useState<string[]>([])
 
     useEffect(() => {
         //check error inside URL
@@ -65,11 +66,20 @@ export default function GameLobby() {
                 setErrorMessage(null)
                 setIsLeader(isLeaderGame)
                 setStatus("Waiting")
+            });
+
+            socket.on('newLeader', (socketIdLeader: string) => {
+                console.log('client update leader')
+                if (socketId === socketIdLeader)
+                    setIsLeader(true)
             })
 
+            socket.on('updatePlayersList', (players: string[]) => {
+                console.log('client update players list')
+                setListPlayers(players)
+            })
         }
     }, [socket]);
-
 
 
     if (status === "Error") {
@@ -95,6 +105,7 @@ export default function GameLobby() {
             <p>socket = {socketId}</p>
             <p>leader = {String(isLeader)}</p>
             <p>Status: {status}</p>
+            <p>players : {listPlayers}</p>
         </>
     )
 }
