@@ -2,7 +2,7 @@ import {useParams} from "react-router";
 import {useEffect, useState} from "react";
 import {io, Socket} from "socket.io-client";
 import WaitingRoom from "./WaitingRoom.tsx";
-
+import bgSimple from "../assets/BackgroundSimple.png"
 
 // import WaitingRoom from "./WaitingRoom.tsx";
 
@@ -109,7 +109,22 @@ export default function GameLobby() {
         )
     } else if (status === "Game") {
         return (
-            <p>Let's Game</p>
+            <div
+                style={{
+                  position: "fixed",       // background fixe fullscreen
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  backgroundImage: `url(${bgSimple})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                  overflow: "hidden",      // sécurité si image trop grande
+                }}
+              >
+                <p>Let's Game</p>
+            </div>
         )
     } else {
         return (<>Status empty</>)
