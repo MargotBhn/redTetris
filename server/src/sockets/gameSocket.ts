@@ -6,7 +6,7 @@ export function sendListPlayers(
     game: Game,
     io: Server,
 ) {
-    const players = game.players.map(player => player.name);
+    const players = game.players.map(player => ({name: player.name, socketId: player.socketId}));
     io.to(game.roomName).emit("updatePlayersList", players);
 }
 

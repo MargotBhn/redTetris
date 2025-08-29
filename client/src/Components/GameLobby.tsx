@@ -8,6 +8,11 @@ import bgSimple from "../assets/BackgroundSimple.png"
 
 type StatusState = "Error" | "Waiting" | "Game" | "EndGame";
 
+export interface PlayerName {
+    name: string,
+    socketId: string,
+}
+
 
 function urlErrorCheck(room: string | undefined, login: string | undefined): string | null {
     if (room === undefined || login === undefined) {
@@ -30,7 +35,7 @@ export default function GameLobby() {
     const [socketId, setSocketId] = useState<string | undefined>(undefined)
     const [socket, setSocket] = useState<Socket | null>(null)
     const [isLeader, setIsLeader] = useState<boolean>(false)
-    const [listPlayers, setListPlayers] = useState<string[]>([])
+    const [listPlayers, setListPlayers] = useState<PlayerName[]>([])
 
     useEffect(() => {
         //check error inside URL
@@ -75,7 +80,7 @@ export default function GameLobby() {
                     setIsLeader(true)
             })
 
-            socket.on('updatePlayersList', (players: string[]) => {
+            socket.on('updatePlayersList', (players: PlayerName[]) => {
                 setListPlayers(players)
             })
 
@@ -111,18 +116,18 @@ export default function GameLobby() {
         return (
             <div
                 style={{
-                  position: "fixed",       // background fixe fullscreen
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  backgroundImage: `url(${bgSimple})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
-                  overflow: "hidden",      // sécurité si image trop grande
+                    position: "fixed",       // background fixe fullscreen
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    backgroundImage: `url(${bgSimple})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                    overflow: "hidden",      // sécurité si image trop grande
                 }}
-              >
+            >
                 <p>Let's Game</p>
             </div>
         )
