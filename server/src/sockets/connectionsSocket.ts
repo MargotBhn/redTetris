@@ -2,6 +2,7 @@ import Game from "../classes/Game.js";
 import {Server, Socket} from "socket.io";
 import Player from "../classes/Player.js";
 import {sendListPlayers, updateNewLeader} from "./gameSocket.js";
+import player from "../classes/Player.js";
 
 
 export function handlePlayerConnection(
@@ -11,12 +12,17 @@ export function handlePlayerConnection(
 
     socket.on('joinRoom', (room: string, login: string, socketId: string) => {
         let game = games.get(room);
-        console.log(login, ' connected ', room, ' is free ? ', !game?.started)
 
         if (game && game.started) {
-            console.log('game started');
             socket.emit('joinError')
             return
+        }
+        if (game) {
+            for (const player of game.players) {
+                if (player.socketId === socket.id) {
+                    return
+                }
+            }
         }
 
         if (!game) {
@@ -52,14 +58,11 @@ export function handlePlayerConnection(
 
                 //delete empty game
                 if (game.players.length === 0) {
-                    console.log('delete game because empty')
                     games.delete(room);
                 }
                 // Tells the others that one player left
                 else {
-                    console.log(leavingPlayer!.name, " left the game")
                     if (leavingPlayer!.isLeader) {
-                        console.log('server : leavingPlayer was leader');
                         game.players[0]!.isLeader = true
                         updateNewLeader(io, game, game.players[0]!.socketId)
                     }

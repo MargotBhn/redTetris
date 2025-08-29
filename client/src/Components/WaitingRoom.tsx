@@ -10,7 +10,6 @@ interface WaitingRoomProps {
 
 export default function WaitingRoom({leader, listPlayers, startGame}: WaitingRoomProps) {
 
-    console.log("list players front = ", listPlayers)
     const players = listPlayers.map((player) =>
         <div key={player.socketId} className="font-semibold text-lg">{player.name}</div>
     )

@@ -85,7 +85,6 @@ export default function GameLobby() {
             })
 
             socket.on('gameStarts', () => {
-                console.log('status Game')
                 setStatus('Game')
             })
         }
