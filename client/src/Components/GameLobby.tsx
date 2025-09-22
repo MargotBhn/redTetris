@@ -1,8 +1,9 @@
 import {useParams} from "react-router";
 import {useEffect, useState} from "react";
-import {io, Socket} from "socket.io-client";
-import WaitingRoom from "./WaitingRoom.tsx";
+// import {Socket} from "socket.io-client";
+// import WaitingRoom from "./WaitingRoom.tsx";
 import bgSimple from "../assets/BackgroundSimple.png"
+import {socketMiddleware} from "../middleware/socketMiddleware.ts";
 
 // import WaitingRoom from "./WaitingRoom.tsx";
 
@@ -33,9 +34,9 @@ export default function GameLobby() {
     const [status, setStatus] = useState<StatusState>()
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [socketId, setSocketId] = useState<string | undefined>(undefined)
-    const [socket, setSocket] = useState<Socket | null>(null)
-    const [isLeader, setIsLeader] = useState<boolean>(false)
-    const [listPlayers, setListPlayers] = useState<PlayerName[]>([])
+    // const [socket, setSocket] = useState<Socket | null>(null)
+    // const [isLeader, setIsLeader] = useState<boolean>(false)
+    // const [listPlayers, setListPlayers] = useState<PlayerName[]>([])
 
     useEffect(() => {
         //check error inside URL
@@ -45,58 +46,69 @@ export default function GameLobby() {
             setStatus("Error")
             return
         }
+        // console.log(socketMiddleware.getSocket())
 
         // Check room availability
-        if (room && login && !socket) {
-            const newSocket = io("http://localhost:3000");
-            setSocket(newSocket)
-            setSocketId(newSocket.id)
+        // if (room && login && !socket) {
+        //     const newSocket = io("http://localhost:3000");
+        //     setSocket(newSocket)
+        //     setSocketId(newSocket.id)
+        // }
+        // socketMiddleware.on('connect', () => {
+        //     console.log('Connected via socket middleware!')
+        // })
+        if (!socketMiddleware.isConnected()) {
+            socketMiddleware.connect()
         }
+        // } else {
+        //     setSocketId(socketMiddleware.getSocket())
+        // }
+
 
     }, [room, login]);
 
-    useEffect(() => {
-        if (socket) {
-            socket.on('connect', () => {
-                setSocketId(socket.id);
-                socket.emit('joinRoom', room, login, socket.id);
+    // useEffect(() => {
+    //     if (socket) {
+    //         socket.on('connect', () => {
+    //             setSocketId(socket.id);
+    //             socket.emit('joinRoom', room, login, socket.id);
+    //
+    //         });
+    //
+    //
+    //         socket.on('joinError', () => {
+    //             setErrorMessage("This room is not available. A game is already in progress.")
+    //             setStatus("Error")
+    //         })
+    //
+    //         socket.on('joinedSuccess', (isLeaderGame: boolean) => {
+    //             setErrorMessage(null)
+    //             setIsLeader(isLeaderGame)
+    //             setStatus("Waiting")
+    //         });
+    //
+    //         socket.on('newLeader', (socketIdLeader: string) => {
+    //             if (socketId === socketIdLeader)
+    //                 setIsLeader(true)
+    //         })
+    //
+    //         socket.on('updatePlayersList', (players: PlayerName[]) => {
+    //             setListPlayers(players)
+    //         })
+    //
+    //         socket.on('gameStarts', () => {
+    //             setStatus('Game')
+    //         })
+    //     }
+    // }, [socket, socketId]);
 
-            });
+    // const startGame = () => {
+    //     if (socket) {
+    //         socket.emit('startGame', room);
+    //     }
+    // }
 
-
-            socket.on('joinError', () => {
-                setErrorMessage("This room is not available. A game is already in progress.")
-                setStatus("Error")
-            })
-
-            socket.on('joinedSuccess', (isLeaderGame: boolean) => {
-                setErrorMessage(null)
-                setIsLeader(isLeaderGame)
-                setStatus("Waiting")
-            });
-
-            socket.on('newLeader', (socketIdLeader: string) => {
-                if (socketId === socketIdLeader)
-                    setIsLeader(true)
-            })
-
-            socket.on('updatePlayersList', (players: PlayerName[]) => {
-                setListPlayers(players)
-            })
-
-            socket.on('gameStarts', () => {
-                setStatus('Game')
-            })
-        }
-    }, [socket, socketId]);
-
-    const startGame = () => {
-        if (socket) {
-            socket.emit('startGame', room);
-        }
-    }
-
-
+    console.log(socketId)
     if (status === "Error") {
         return (
             <>
@@ -108,7 +120,7 @@ export default function GameLobby() {
     } else if (status === "Waiting") {
         return (
             <>
-                <WaitingRoom leader={isLeader} listPlayers={listPlayers} startGame={startGame}/>
+                {/*<WaitingRoom leader={isLeader} listPlayers={listPlayers} startGame={startGame}/>*/}
             </>
         )
     } else if (status === "Game") {
