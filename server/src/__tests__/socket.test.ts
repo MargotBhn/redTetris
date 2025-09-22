@@ -1,6 +1,8 @@
 import {createServer} from 'node:http';
 import {initSocket} from '../sockets/initSocket';
 import {io as Client, Socket} from 'socket.io-client';
+// import {handlePlayerConnection} from "../sockets/connectionsSocket";
+
 
 let httpServer: ReturnType<typeof createServer>;
 let clientSocket: Socket;
@@ -11,7 +13,7 @@ beforeAll((done) => {
     httpServer.listen(() => {
         const port = (httpServer.address() as any).port;
         clientSocket = Client(`http://localhost:${port}`);
-        clientSocket.on('connection', done);
+        clientSocket.on('connect', done);
     });
 });
 
