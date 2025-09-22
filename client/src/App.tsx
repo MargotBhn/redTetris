@@ -9,8 +9,6 @@ import {socketMiddleware} from "./middleware/socketMiddleware.ts";
 function App() {
 
     useEffect(() => {
-        socketMiddleware.connect()
-        console.log('connected via the App to socket');
         return () => {
             console.log("Disconnected to the App")
             socketMiddleware.disconnect()

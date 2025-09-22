@@ -1,13 +1,12 @@
 import {useParams} from "react-router";
 import {useEffect, useState} from "react";
-// import {Socket} from "socket.io-client";
-// import WaitingRoom from "./WaitingRoom.tsx";
+import WaitingRoom from "./WaitingRoom.tsx";
 import bgSimple from "../assets/BackgroundSimple.png"
 import {socketMiddleware} from "../middleware/socketMiddleware.ts";
 
 // import WaitingRoom from "./WaitingRoom.tsx";
 
-type StatusState = "Error" | "Waiting" | "Game" | "EndGame";
+type StatusState = "Error" | "Waiting" | "Game" | "EndGame" | "RoomBusy";
 
 export interface PlayerName {
     name: string,
@@ -34,9 +33,8 @@ export default function GameLobby() {
     const [status, setStatus] = useState<StatusState>()
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [socketId, setSocketId] = useState<string | undefined>(undefined)
-    // const [socket, setSocket] = useState<Socket | null>(null)
-    // const [isLeader, setIsLeader] = useState<boolean>(false)
-    // const [listPlayers, setListPlayers] = useState<PlayerName[]>([])
+    const [isLeader, setIsLeader] = useState<boolean>(false)
+    const [listPlayers, setListPlayers] = useState<PlayerName[]>([])
 
     useEffect(() => {
         //check error inside URL
@@ -46,81 +44,105 @@ export default function GameLobby() {
             setStatus("Error")
             return
         }
-        // console.log(socketMiddleware.getSocket())
 
-        // Check room availability
-        // if (room && login && !socket) {
-        //     const newSocket = io("http://localhost:3000");
-        //     setSocket(newSocket)
-        //     setSocketId(newSocket.id)
-        // }
-        // socketMiddleware.on('connect', () => {
-        //     console.log('Connected via socket middleware!')
-        // })
+        // Connect to socket via middleware
         if (!socketMiddleware.isConnected()) {
             socketMiddleware.connect()
+            socketMiddleware.on('connect', () => {
+                setSocketId(socketMiddleware.getId())
+                if (room && login) {
+                    socketMiddleware.emit('joinRoom', room, login, socketMiddleware.getId())
+                }
+            })
+        } else {
+            setSocketId(socketMiddleware.getId())
+            if (room && login) {
+                socketMiddleware.emit('joinRoom', room, login, socketMiddleware.getId())
+            }
         }
-        // } else {
-        //     setSocketId(socketMiddleware.getSocket())
-        // }
-
-
     }, [room, login]);
 
-    // useEffect(() => {
-    //     if (socket) {
-    //         socket.on('connect', () => {
-    //             setSocketId(socket.id);
-    //             socket.emit('joinRoom', room, login, socket.id);
-    //
-    //         });
-    //
-    //
-    //         socket.on('joinError', () => {
-    //             setErrorMessage("This room is not available. A game is already in progress.")
-    //             setStatus("Error")
-    //         })
-    //
-    //         socket.on('joinedSuccess', (isLeaderGame: boolean) => {
-    //             setErrorMessage(null)
-    //             setIsLeader(isLeaderGame)
-    //             setStatus("Waiting")
-    //         });
-    //
-    //         socket.on('newLeader', (socketIdLeader: string) => {
-    //             if (socketId === socketIdLeader)
-    //                 setIsLeader(true)
-    //         })
-    //
-    //         socket.on('updatePlayersList', (players: PlayerName[]) => {
-    //             setListPlayers(players)
-    //         })
-    //
-    //         socket.on('gameStarts', () => {
-    //             setStatus('Game')
-    //         })
-    //     }
-    // }, [socket, socketId]);
+    useEffect(() => {
+        // Setup all socket event listeners via middleware
+        socketMiddleware.on('joinError', () => {
+            setErrorMessage("This room is not available. A game is already in progress.")
+            setStatus("RoomBusy")
+        })
 
-    // const startGame = () => {
-    //     if (socket) {
-    //         socket.emit('startGame', room);
-    //     }
-    // }
+        socketMiddleware.on('joinedSuccess', (isLeaderGame: boolean) => {
+            setErrorMessage(null)
+            setIsLeader(isLeaderGame)
+            setStatus("Waiting")
+        });
 
-    console.log(socketId)
+        socketMiddleware.on('newLeader', (socketIdLeader: string) => {
+            if (socketId === socketIdLeader)
+                setIsLeader(true)
+        })
+
+        socketMiddleware.on('updatePlayersList', (players: PlayerName[]) => {
+            setListPlayers(players)
+        })
+
+        socketMiddleware.on('gameStarts', () => {
+            setStatus('Game')
+        })
+    }, [socketId]);
+
+    const startGame = () => {
+        if (socketMiddleware.isConnected()) {
+            socketMiddleware.emit('startGame', room);
+        }
+    }
+
     if (status === "Error") {
         return (
-            <>
-                <p>Error on the URL : {errorMessage}</p>
-                <p>It should follow this model :</p>
-                <p>http://localhost:5173/room/player_name</p>
-            </>
+            <div
+                style={{
+                    position: "fixed",       // background fixe fullscreen
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    backgroundImage: `url(${bgSimple})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                    overflow: "hidden",      // sécurité si image trop grande
+                }}
+            >
+                <div className="flex flex-col items-center justify-center min-h-screen text-white gap-3 text-xl">
+                    <p>Error on the URL : {errorMessage}</p>
+                    <p>It should follow this model :</p>
+                    <p>http://localhost:5173/room/player_name</p>
+                </div>
+            </div>
+        )
+    } else if (status === "RoomBusy") {
+        return (
+            <div
+                style={{
+                    position: "fixed",       // background fixe fullscreen
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    backgroundImage: `url(${bgSimple})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                    overflow: "hidden",      // sécurité si image trop grande
+                }}
+            >
+                <div className="flex items-center justify-center min-h-screen text-white text-xl">
+                    <p>{errorMessage}</p>
+                </div>
+            </div>
         )
     } else if (status === "Waiting") {
         return (
             <>
-                {/*<WaitingRoom leader={isLeader} listPlayers={listPlayers} startGame={startGame}/>*/}
+                <WaitingRoom leader={isLeader} listPlayers={listPlayers} startGame={startGame}/>
             </>
         )
     } else if (status === "Game") {
@@ -139,7 +161,7 @@ export default function GameLobby() {
                     overflow: "hidden",      // sécurité si image trop grande
                 }}
             >
-                <p>Let's Game</p>
+                <div className={"text-white"}>Let's Game</div>
             </div>
         )
     } else {

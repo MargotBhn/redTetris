@@ -1,3 +1,17 @@
+/**
+ * Socket.io Middleware - Complete Encapsulation
+ *
+ * This middleware acts as an intermediary layer between React components and socket.io,
+ * providing complete encapsulation by:
+ * - Being the ONLY place where socket.io is directly imported and instantiated
+ * - Providing a clean, consistent API (connect, emit, on, off, disconnect)
+ * - Abstracting all socket.io complexity from components
+ * - Centralizing connection management and error handling
+ * - Following the Facade design pattern to hide implementation details
+ *
+ * Components never import socket.io-client directly - they only use this middleware,
+ * ensuring complete separation of concerns and easier maintenance.
+ */
 import {io, Socket} from "socket.io-client";
 
 
@@ -7,15 +21,9 @@ const createMiddleware = () => {
     return {
         connect: () => {
             if (socket) {
-                console.log("socket a deconnecter ", socket.id)
                 socket.disconnect()
             }
             socket = io("http://localhost:3000")
-
-            socket.on('connect', () => {
-                console.log("socket connected with id:", socket?.id)
-            })
-            console.log("socket created ", socket)
         },
 
         on: (event: string, callback: any) => {
@@ -32,9 +40,9 @@ const createMiddleware = () => {
             }
         },
 
-        emit: (message: string, data: any) => {
+        emit: (message: string, ...args: any[]) => {
             if (!socket) return
-            socket.emit(message, data)
+            socket.emit(message, ...args)
         },
 
         disconnect: () => {
@@ -44,18 +52,13 @@ const createMiddleware = () => {
                 socket = null
             }
         },
-        getSocket: () => {
-            if (socket) {
-                console.log('Print socket ', socket)
-                return socket.id
-            } else
-                return "Socket null"
-        },
 
         isConnected: () => {
-            if (socket && socket.connect()) {
-                return true
-            }
+            return socket?.connected || false
+        },
+
+        getId: () => {
+            return socket?.id
         }
     }
 }
