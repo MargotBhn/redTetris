@@ -1,3 +1,4 @@
+import { list } from 'postcss';
 import bgTetris from '../assets/BackgroundTetris.png'
 import type {PlayerName} from "./GameLobby.tsx";
 
@@ -10,10 +11,12 @@ interface WaitingRoomProps {
 
 export default function WaitingRoom({leader, listPlayers, startGame}: WaitingRoomProps) {
 
-    const players = listPlayers.map((player) =>
-        <div key={player.socketId} className="font-semibold text-lg">{player.name}</div>
+    const players = listPlayers.map((player, idx) =>
+        <div key={player?.socketId ?? idx} className="font-semibold text-lg">
+            {typeof player === "string" ? player : player?.name ?? <span className="text-red-400">No name</span>}
+        </div>
     )
-
+    
     return (
         <div
             style={{
@@ -42,14 +45,24 @@ export default function WaitingRoom({leader, listPlayers, startGame}: WaitingRoo
                     zIndex: 10,             // assure que le texte est au-dessus du background
                 }}
             >
-                <div className="p-8 border-4 border-yellow-400 rounded-xl ">
+                <div className="p-8 border-4 border-yellow-400 rounded-xl"
+                     style={{
+                         background: "rgba(0,0,0,0.7)", // Ajout d'un fond semi-transparent
+                     }}
+                >
                     <h3 className="text-2xl font-bold text-yellow-400 mb-4 uppercase">
                         Players
                     </h3>
                     <div className="mb-6 space-y-2">
-                        {players}
+                        {listPlayers.length === 0 ? (
+                            <div className="font-semibold text-lg">No players yet</div>
+                        ) : (
+                            players
+                        )}
                     </div>
-                    {leader ? <StartButton startGame={startGame}/> : null}
+                    <div>
+                        {leader ? <StartButton startGame={startGame}/> : null}
+                    </div>
                 </div>
             </div>
         </div>
