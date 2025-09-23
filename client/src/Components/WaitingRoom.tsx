@@ -31,7 +31,6 @@ export default function WaitingRoom({leader, listPlayers, startGame}: WaitingRoo
                 overflow: "hidden",      // sécurité si image trop grande
             }}
         >
-            {/* Texte indépendant */}
             <div
                 style={{
                     position: "absolute",

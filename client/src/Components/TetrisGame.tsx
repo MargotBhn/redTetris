@@ -1,24 +1,55 @@
 import {useEffect, useState} from "react";
+import {tetrominos} from "./Game";
+
 
 // matrix[row][col]   | ->
 // gameGrid[y][x]
 
+type PieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
+
 interface Cell {
-    value: number;
+    value: string;
     color: string;
+    locked: boolean;
+
 }
 
-function getCellColor(value: number) {
-    const colors: { [key: number]: string } = {
-        0: 'bg-gray-200',           // Empty
-        1: 'bg-cyan-500',           // I
-        2: 'bg-yellow-500',         // O
-        3: 'bg-purple-500',         // T
-        4: 'bg-green-500',          // S
-        5: 'bg-red-500',            // Z
-        6: 'bg-blue-500',           // J
-        7: 'bg-orange-500',         // L
-        8: 'bg-black-500',          // Locked
+interface PiecePosition {
+    x: number,
+    y: number
+}
+
+interface Piece {
+    type: string,
+    position: PiecePosition
+    rotation: number,
+    matrix: number[][]
+}
+
+function getRandomPiece(): Piece {
+    const pieces: PieceType[] = ['I', 'O', 'T', 'S', 'Z', 'J', 'L']
+    const randomPieceIndex = Math.floor(Math.random() * pieces.length);
+    const type = pieces[randomPieceIndex]
+    const spawnY = type == 'I' ? -1 : 0
+    return {
+        type: type,
+        position: {x: 3, y: spawnY},
+        rotation: 0,
+        matrix: tetrominos[type][0],
+    }
+}
+
+function getCellColor(value: string) {
+    const colors: { [key: string]: string } = {
+        'E': 'bg-gray-200', //empty
+        'I': 'bg-cyan-500',
+        'O': 'bg-yellow-500',
+        'T': 'bg-purple-500',
+        'S': 'bg-green-500',
+        'Z': 'bg-red-500',
+        'J': 'bg-blue-500',
+        'L': 'bg-orange-500',
+        'B': 'bg-black-500', // Blocked
     };
     return colors[value];
 }
@@ -26,20 +57,51 @@ function getCellColor(value: number) {
 function createEmptyGrid() {
     return Array(20).fill(0).map(() => Array(10).fill(0).map(() => ({
         color: "bg-gray-200",
-        value: 0
+        value: 'empty',
+        locked: false,
     })));
+}
+
+function getNewGrid(grid: Cell[][], piece: Piece | null): Cell[][] {
+    if (!piece)
+        return grid
+
+    const newGrid = grid.map(row => row.map(cell => ({...cell})))
+    console.log(piece.matrix)
+
+    piece.matrix.forEach((row, y) => {
+        row.forEach((cell, x) => {
+            if (cell == 1) {
+                const newY = y + piece.position.y
+                const newX = x + piece.position.x
+
+                newGrid[newY][newX].value = piece.type
+                newGrid[newY][newX].color = getCellColor(piece.type)
+
+            }
+        })
+    })
+    return newGrid
 }
 
 export default function TetrisGame() {
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
+    const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
 
 
     useEffect(() => {
-        const newGrid = grid.map(row => row.map(cell => ({...cell})));
-        newGrid[0][0] = {value: 1, color: getCellColor(1)}
-        newGrid[19][9] = {value: 1, color: getCellColor(1)}
-        setGrid(newGrid);
+        // const newGrid = grid.map(row => row.map(cell => ({...cell})));
+        // newGrid[0][0] = {value: 1, color: getCellColor(1)}
+        // newGrid[19][9] = {value: 1, color: getCellColor(1)}
+        // setGrid(newGrid);
+        setCurrentPiece(getRandomPiece())
+
     }, []);
+
+    useEffect(() => {
+        console.log(currentPiece);
+        setGrid(getNewGrid(grid, currentPiece))
+    }, [currentPiece]);
 
 
     return (
