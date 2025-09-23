@@ -6,6 +6,7 @@ class Player {
     board: Board;
     isAlive: boolean;
     isLeader: boolean;
+    pieceIndex: number //index de la piece sur laquelle il est. A incrementer a chaque fois qu'il pose une piece
 
     constructor(name: string, socketId: string, isLeader: boolean) {
         this.name = name;
@@ -13,6 +14,7 @@ class Player {
         this.board = this.initBoard();
         this.isAlive = true;
         this.isLeader = isLeader
+        this.pieceIndex = 0;
     }
 
     private initBoard(): Board {

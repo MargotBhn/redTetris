@@ -1,4 +1,3 @@
-import { list } from 'postcss';
 import bgTetris from '../assets/BackgroundTetris.png'
 import type {PlayerName} from "./GameLobby.tsx";
 
@@ -16,7 +15,7 @@ export default function WaitingRoom({leader, listPlayers, startGame}: WaitingRoo
             {typeof player === "string" ? player : player?.name ?? <span className="text-red-400">No name</span>}
         </div>
     )
-    
+
     return (
         <div
             style={{
@@ -78,7 +77,9 @@ export function StartButton({startGame}: startButtonProps) {
     return (
         <button
             onClick={startGame}
-            className="px-6 py-4 bg-green-600 text-white font-bold rounded-xl border-2 border-green-500 hover:bg-green-500 hover:border-green-400 hover:shadow-[0_0_20px_rgba(34,197,94,0.5)] transition-all duration-300 text-lg uppercase tracking-wider"
+            className="px-6 py-4 bg-green-600 text-white font-bold rounded-xl border-2 border-green-500
+            hover:bg-green-500 hover:border-green-400 hover:shadow-[0_0_20px_rgba(34,197,94,0.5)]
+            transition-all duration-300 text-lg uppercase tracking-wider"
         >
             Start Game
         </button>

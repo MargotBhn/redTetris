@@ -3,6 +3,7 @@ import {useEffect, useState} from "react";
 import WaitingRoom from "./WaitingRoom.tsx";
 import bgSimple from "../assets/BackgroundSimple.png"
 import {socketMiddleware} from "../middleware/socketMiddleware.ts";
+import TetrisGame from "./TetrisGame.tsx";
 
 // import WaitingRoom from "./WaitingRoom.tsx";
 
@@ -147,22 +148,7 @@ export default function GameLobby() {
         )
     } else if (status === "Game") {
         return (
-            <div
-                style={{
-                    position: "fixed",       // background fixe fullscreen
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    backgroundImage: `url(${bgSimple})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    overflow: "hidden",      // sécurité si image trop grande
-                }}
-            >
-                <div className={"text-white"}>Let's Game</div>
-            </div>
+            <TetrisGame/>
         )
     } else {
         return (<>Status empty</>)
