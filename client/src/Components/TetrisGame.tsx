@@ -1,5 +1,8 @@
 import {useEffect, useRef, useState} from "react";
-import {tetrominos} from "./Game";
+import {tetrominos} from "./Pieces.ts";
+import Board from "./Board.tsx";
+import GameOver from "./GameOver.tsx";
+import bgSimple from "../assets/BackgroundSimple.png";
 
 // RULES
 // End : The game ends when a new piece can no longer enter the field
@@ -11,9 +14,12 @@ import {tetrominos} from "./Game";
 // matrix[row][col]   | ->
 // gameGrid[y][x]
 
+const GRID_HEIGHT = 20;
+const GRID_WIDTH = 10;
+
 type PieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
 
-interface Cell {
+export interface Cell {
     value: string;
     color: string;
     locked: boolean; // pieces posees
@@ -61,7 +67,7 @@ function getCellColor(value: string) {
 }
 
 function createEmptyGrid() {
-    return Array(20).fill(0).map(() => Array(10).fill(0).map(() => ({
+    return Array(GRID_HEIGHT).fill(0).map(() => Array(GRID_WIDTH).fill(0).map(() => ({
         color: "bg-gray-200",
         value: 'E',
         locked: false,
@@ -106,7 +112,7 @@ function testMovementPossible(grid: Cell[][], piece: Piece) {
             if (piece.matrix[y][x] == 1) {
                 const newY = y + piece.position.y
                 const newX = x + piece.position.x
-                if (newY > 19 || newY < 0 || newX > 9 || newX < 0) {
+                if (newY > GRID_HEIGHT - 1 || newY < 0 || newX > GRID_WIDTH - 1 || newX < 0) {
                     return false
                 }
                 if (grid[newY][newX].value !== 'E')
@@ -118,8 +124,6 @@ function testMovementPossible(grid: Cell[][], piece: Piece) {
 }
 
 function fixPieceIntoGrid(piece: Piece | null, grid: Cell[][]) {
-    console.log("grid avant", grid)
-    console.log(piece)
     if (!piece) return grid
     piece.matrix.forEach((row, y) => {
         row.forEach((cell, x) => {
@@ -133,18 +137,33 @@ function fixPieceIntoGrid(piece: Piece | null, grid: Cell[][]) {
             }
         })
     })
-    console.log("grid apres", grid)
     return grid
+}
+
+function gameIsLost(grid: Cell[][], piece: Piece | null) {
+    if (!piece)
+        return false
+
+    for (let y = 0; y < piece.matrix.length; y++) {
+        for (let x = 0; x < piece.matrix[y].length; x++) {
+            if (piece.matrix[y][x] == 1) {
+                if (grid[y + piece.position.y][x + piece.position.x].value !== 'E')
+                    return true
+            }
+        }
+    }
+    return false
 }
 
 export default function TetrisGame() {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
     const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
+    const [gameLost, setGameLost] = useState(false)
     const currentPieceRef = useRef<Piece | null>(null);
 
     const handleKeyDown = (event: KeyboardEvent) => {
-        if (!currentPieceRef.current) {
+        if (!currentPieceRef.current || gameLost) {
             return
         }
         const newPiece: Piece = copyPiece(currentPieceRef.current)
@@ -181,11 +200,9 @@ export default function TetrisGame() {
             case 'S':
             case 'ArrowDown':
                 newPiece.position.y += 1
-                console.log(currentPieceRef.current)
                 if (testMovementPossible(fixedGrid, newPiece)) {
                     setCurrentPiece(newPiece)
                 } else {
-                    console.log(currentPieceRef.current)
                     setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
                     setCurrentPiece(getRandomPiece())
                 }
@@ -212,25 +229,34 @@ export default function TetrisGame() {
     }, []);
 
     useEffect(() => {
-        currentPieceRef.current = currentPiece;
-        setGrid(getNewGrid(fixedGrid, currentPiece))
+        if (gameLost) {
+            document.removeEventListener('keydown', handleKeyDown)
+            document.removeEventListener('keyup', handleKeyUp)
+        }
+    }, [gameLost]);
+
+    useEffect(() => {
+        if (!gameLost) {
+            currentPieceRef.current = currentPiece;
+            if (gameIsLost(fixedGrid, currentPiece)) setGameLost(true)
+            setGrid(getNewGrid(fixedGrid, currentPiece))
+        }
     }, [currentPiece]);
 
 
     return (
-        <>
-            <div className="flex items-center justify-center h-screen">
-                <div className="border-2 border-black">
-                    {grid.map((row, y) => (
-                        <div key={y} className="flex">
-                            {row.map((col, x) => (
-                                <div key={x}
-                                     className={`w-8 h-8 border-r border-b border-black ${col.color}`}></div>
-                            ))}
-                        </div>
-                    ))}
+
+        <div
+            className="fixed top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat overflow-hidden"
+            style={{backgroundImage: `url(${bgSimple})`}}
+        >
+            <div className="flex flex-col items-center justify-center h-screen">
+                {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
+                <div className="flex">
+                    <Board grid={grid}/>
+                    <div className="text-white">Mettre les autres players ici</div>
                 </div>
             </div>
-        </>
+        </div>
     )
 }

@@ -18,30 +18,11 @@ export default function WaitingRoom({leader, listPlayers, startGame}: WaitingRoo
 
     return (
         <div
-            style={{
-                position: "fixed",       // background fixe fullscreen
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                backgroundImage: `url(${bgTetris})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-                overflow: "hidden",      // sécurité si image trop grande
-            }}
+            className="fixed top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat overflow-hidden"
+            style={{backgroundImage: `url(${bgTetris})`}}
         >
-            <div
-                style={{
-                    position: "absolute",
-                    top: "20%",             // distance depuis le haut
-                    left: "50%",
-                    transform: "translateX(-50%)", // centré horizontalement
-                    textAlign: "center",
-                    color: "#fff",
-                    textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-                    zIndex: 10,             // assure que le texte est au-dessus du background
-                }}
+            <div className="absolute top-[20%] left-1/2 -translate-x-1/2 text-center text-white z-10"
+                 style={{textShadow: "0 2px 8px rgba(0,0,0,0.6)"}}
             >
                 <div className="p-8 border-4 border-yellow-400 rounded-xl"
                      style={{
@@ -59,7 +40,7 @@ export default function WaitingRoom({leader, listPlayers, startGame}: WaitingRoo
                         )}
                     </div>
                     <div>
-                        {leader ? <StartButton startGame={startGame}/> : null}
+                        {leader && <StartButton startGame={startGame}/>}
                     </div>
                 </div>
             </div>

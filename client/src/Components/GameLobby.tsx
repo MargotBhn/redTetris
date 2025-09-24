@@ -99,18 +99,8 @@ export default function GameLobby() {
     if (status === "Error") {
         return (
             <div
-                style={{
-                    position: "fixed",       // background fixe fullscreen
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    backgroundImage: `url(${bgSimple})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    overflow: "hidden",      // sécurité si image trop grande
-                }}
+                className="fixed top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat overflow-hidden"
+                style={{backgroundImage: `url(${bgSimple})`}}
             >
                 <div className="flex flex-col items-center justify-center min-h-screen text-white gap-3 text-xl">
                     <p>Error on the URL : {errorMessage}</p>
@@ -122,18 +112,8 @@ export default function GameLobby() {
     } else if (status === "RoomBusy") {
         return (
             <div
-                style={{
-                    position: "fixed",       // background fixe fullscreen
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    backgroundImage: `url(${bgSimple})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    overflow: "hidden",      // sécurité si image trop grande
-                }}
+                className="fixed top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat overflow-hidden"
+                style={{backgroundImage: `url(${bgSimple})`}}
             >
                 <div className="flex items-center justify-center min-h-screen text-white text-xl">
                     <p>{errorMessage}</p>
