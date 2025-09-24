@@ -1,66 +1,30 @@
-type Matrix = number[][];
-
-interface Position {
-    x: number;
-    y: number;
-}
-
-
-type PieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
+export type PieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
 
 class Piece {
-    types: Record<PieceType, Matrix>;
+    types: Record<string, PieceType>;
     type: PieceType;
-    // matrix: Matrix;
-    position: Position;
 
     constructor(type?: PieceType) {
         this.types = {
-            I: [[1, 1, 1, 1]],
-            O: [
-                [1, 1],
-                [1, 1],
-            ],
-            T: [
-                [1, 1, 1],
-                [0, 1, 0]
-            ],
-            S: [
-                [0, 1, 1],
-                [1, 1, 0]
-            ],
-            Z: [
-                [1, 1, 0],
-                [0, 1, 1]
-            ],
-            J: [
-                [1, 0, 0],
-                [1, 1, 1]
-            ],
-            L: [
-                [0, 0, 1],
-                [1, 1, 1]
-            ]
+            I: 'I',
+            O: 'O',
+            T: 'T',
+            S: 'S',
+            Z: 'Z',
+            J: 'J',
+            L: 'L'
         };
         if (type) {
-            this.type = type
+            this.type = type;
         } else {
-            this.type = type || this.randomType();
+            this.type = this.randomType();
         }
-        // this.matrix = this.types[this.type];
-        this.position = {x: 3, y: 0}; // Position de départ classique
     }
 
     private randomType(): PieceType {
         const keys = Object.keys(this.types) as PieceType[];
-        return keys[Math.floor(Math.random() * keys.length)]!;
+        return keys[Math.floor(Math.random() * keys.length)] ?? 'I';
     }
-
-    // rotate() {
-    //     this.matrix = this.matrix[0]!.map((_, i) =>
-    //         this.matrix.map(row => row[i]).reverse()
-    //     );
-    // }
 }
 
 export default Piece;
