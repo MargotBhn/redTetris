@@ -1,7 +1,5 @@
 import {Server, Socket} from "socket.io";
 import Game from "../classes/Game.js";
-import Piece from "../classes/Piece.js";
-
 
 export function sendListPlayers(
     game: Game,
@@ -13,6 +11,15 @@ export function sendListPlayers(
 
 export function updateNewLeader(io: Server, game: Game, socketId: string) {
     io.to(game.roomName).emit("newLeader", socketId);
+}
+
+// Helper: chunk an array into bags of size 7
+function chunkIntoBags<T>(arr: T[], size = 7): T[][] {
+    const out: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) {
+        out.push(arr.slice(i, i + size));
+    }
+    return out;
 }
 
 export function handleGame(
@@ -27,37 +34,32 @@ export function handleGame(
             io.to(room).emit("gameStarts");
         }
         console.log("handles game then = ", game);
-    })
+    });
 
+    // Serve shared piece types from the server's 7-bag sequence
     socket.on('pieces', (room: string, count: number = 7) => {
         const game = games.get(room);
         if (!game) return;
 
-        // Ensure the pieceQueue exists
-        if (!Array.isArray((game as any).pieceQueue)) {
-            (game as any).pieceQueue = [];
-        }
+        const types: string[] =
+            typeof (game as any).takeTypes === 'function'
+                ? (game as any).takeTypes(count)
+                : [];
 
-        // Fill queue until it has at least `count` pieces.
-        // Prefer using game.generateNextPiece() if available, otherwise create Piece directly.
-        while ((game as any).pieceQueue.length < count) {
-            if (typeof (game as any).generateNextPiece === 'function') {
-                (game as any).generateNextPiece();
-            } else {
-                (game as any).pieceQueue.push(new Piece());
-            }
-        }
+        socket.emit("pieces", types);
+    });
 
-        // Extract `count` pieces and send their types to the requesting socket
-        const piecesToSend: string[] = [];
-        for (let i = 0; i < count; i++) {
-            const p = (game as any).pieceQueue.shift();
-            if (p) {
-                piecesToSend.push(p.type);
-            }
-        }
+    // Expose current queue grouped as 7-piece bags (non-destructive)
+    socket.on('pieces:queue', (room: string) => {
+        const game = games.get(room);
+        if (!game) return;
 
-        socket.emit("pieces", piecesToSend);
+        const queue = Array.isArray((game as any).pieceQueue)
+            ? ((game as any).pieceQueue as string[])
+            : [];
+
+        const bags = chunkIntoBags(queue, 7);
+        socket.emit('pieces:queue', { bags, total: queue.length });
     });
 
 }

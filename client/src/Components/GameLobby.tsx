@@ -36,6 +36,8 @@ export default function GameLobby() {
     const [socketId, setSocketId] = useState<string | undefined>(undefined)
     const [isLeader, setIsLeader] = useState<boolean>(false)
     const [listPlayers, setListPlayers] = useState<PlayerName[]>([])
+    // Snapshot de la file des pièces pour debug/visualisation
+    const [pieceQueueSnapshot, setPieceQueueSnapshot] = useState<{ bags: string[][], total: number } | null>(null)
 
     useEffect(() => {
         //check error inside URL
@@ -74,6 +76,10 @@ export default function GameLobby() {
             setErrorMessage(null)
             setIsLeader(isLeaderGame)
             setStatus("Waiting")
+            // Demande explicite de la file des pièces (2 sacs déjà générés côté serveur)
+            if (room) {
+                socketMiddleware.emit('pieces:queue', room)
+            }
         });
 
         socketMiddleware.on('newLeader', (socketIdLeader: string) => {
@@ -88,7 +94,19 @@ export default function GameLobby() {
         socketMiddleware.on('gameStarts', () => {
             setStatus('Game')
         })
-    }, [socketId]);
+
+        // Écoute des sacs/queue de pièces
+        const onPiecesQueue = (payload: { bags: string[][], total: number }) => {
+            console.log('pieces:queue snapshot', payload)
+            setPieceQueueSnapshot(payload)
+            console.log("PieceQueueSnapshot", pieceQueueSnapshot);
+        }
+        socketMiddleware.on('pieces:queue', onPiecesQueue)
+
+        return () => {
+            socketMiddleware.off('pieces:queue', onPiecesQueue)
+        }
+    }, [socketId, room]);
 
     const startGame = () => {
         if (socketMiddleware.isConnected()) {

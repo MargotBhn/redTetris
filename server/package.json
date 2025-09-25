@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node ./dist/index.js",
+    "start": "npm run build && node ./dist/index.js",
     "build": "tsc",
     "test": "jest --config ../jest.server.config.js"
   },

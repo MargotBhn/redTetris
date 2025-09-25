@@ -26,7 +26,13 @@ export function handlePlayerConnection(
         }
 
         if (!game) {
+            console.log(`[Game:create] Creating new Game for room="${room}"`);
             game = new Game(room);
+            console.log(`[Game:create] pieceQueue initial length=${game.pieceQueue.length}`);
+            console.log(`[Game:create] pieceQueue first two bags:`, {
+                bag1: game.pieceQueue.slice(0, 7),
+                bag2: game.pieceQueue.slice(7, 14),
+            });
             games.set(room, game);
         }
 
@@ -37,12 +43,31 @@ export function handlePlayerConnection(
         }
         const newPlayer: Player = new Player(login, socketId, isLeader)
         game.players.push(newPlayer)
-        console.log('game = ', game)
+        console.log('[Game:state] room=', room, 'players=', game.players.length, 'started=', game.started);
+        console.log('[Game:state] pieceQueue length=', game.pieceQueue.length);
+        console.log('[Game:state] first two bags:', {
+            bag1: game.pieceQueue.slice(0, 7),
+            bag2: game.pieceQueue.slice(7, 14),
+        });
 
         socket.join(room)
 
         socket.emit('joinedSuccess', newPlayer.isLeader)
         sendListPlayers(game, io)
+
+        // Émettre immédiatement l'état courant de la file des pièces (regroupée par sacs de 7)
+        {
+            const queue = Array.isArray((game as any).pieceQueue)
+                ? ((game as any).pieceQueue as string[])
+                : [];
+
+            const bags: string[][] = [];
+            for (let i = 0; i < queue.length; i += 7) {
+                bags.push(queue.slice(i, i + 7));
+            }
+
+            socket.emit('pieces:queue', { bags, total: queue.length });
+        }
     })
 
     ///////// PLAYER DISCONNECTION ///////////
