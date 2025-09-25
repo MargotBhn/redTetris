@@ -22,13 +22,16 @@ afterAll(() => {
     httpServer.close();
 });
 
-test('should receive testMessage from server', (done) => {
-    clientSocket.on('testMessage', (msg: any) => {
+test('should join room successfully', (done) => {
+    clientSocket.on('joinedSuccess', (isLeader: boolean) => {
         try {
-            expect(msg).toBe('test message depuis le server');
+            expect(isLeader).toBe(true); // First player should be leader
             done();
         } catch (err) {
             done(err);
         }
     });
+
+    // Emit joinRoom event to trigger the response
+    clientSocket.emit('joinRoom', '1', 'testPlayer', clientSocket.id);
 });
