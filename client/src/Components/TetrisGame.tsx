@@ -1,8 +1,9 @@
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {tetrominos} from "./Pieces.ts";
 import Board from "./Board.tsx";
 import GameOver from "./GameOver.tsx";
 import bgSimple from "../assets/BackgroundSimple.png";
+
 
 // RULES
 // End : The game ends when a new piece can no longer enter the field
@@ -140,6 +141,17 @@ function fixPieceIntoGrid(piece: Piece | null, grid: Cell[][]) {
     return grid
 }
 
+function forcePieceDown(grid: Cell[][], piece: Piece): Piece {
+    for (let boardY = GRID_HEIGHT - 1; boardY >= 0; boardY--) {
+        piece.position.y = boardY
+        if (testMovementPossible(grid, piece)) {
+            return piece
+        }
+    }
+    return piece
+
+}
+
 function gameIsLost(grid: Cell[][], piece: Piece | null) {
     if (!piece)
         return false
@@ -155,66 +167,98 @@ function gameIsLost(grid: Cell[][], piece: Piece | null) {
     return false
 }
 
+
 export default function TetrisGame() {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
     const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
     const [gameLost, setGameLost] = useState(false)
     const currentPieceRef = useRef<Piece | null>(null);
+    const [toggleTimer, setToggleTimer] = useState(false);
+    const timerRef = useRef<number | null>(null);
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-        if (!currentPieceRef.current || gameLost) {
-            return
-        }
-        const newPiece: Piece = copyPiece(currentPieceRef.current)
-        switch (event.key) {
-            case 'a':
-            case 'A':
-            case'ArrowLeft' :
-                newPiece.position.x -= 1
-                if (testMovementPossible(fixedGrid, newPiece)) {
-                    setCurrentPiece(newPiece)
-                }
-                break;
-            case 'd' :
-            case'D':
-            case 'ArrowRight' :
-                newPiece.position.x += 1
-                if (testMovementPossible(fixedGrid, newPiece)) {
-                    setCurrentPiece(newPiece)
-                }
-                break;
-            case 'w':
-            case'W':
-            case'ArrowUp':
-                if (newPiece.rotation == 3)
-                    newPiece.rotation = 0
-                else
-                    newPiece.rotation++
-                newPiece.matrix = tetrominos[newPiece.type][newPiece.rotation]
-                if (testMovementPossible(fixedGrid, newPiece)) {
-                    setCurrentPiece(newPiece)
-                }
-                break;
-            case 's':
-            case 'S':
-            case 'ArrowDown':
-                newPiece.position.y += 1
-                if (testMovementPossible(fixedGrid, newPiece)) {
-                    setCurrentPiece(newPiece)
-                } else {
-                    setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
-                    setCurrentPiece(getRandomPiece())
-                }
-                break;
+    const fall = (newPiece: Piece) => {
+        newPiece.position.y += 1
+        if (testMovementPossible(fixedGrid, newPiece)) {
+            setCurrentPiece(newPiece)
+        } else {
+            setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
+            setCurrentPiece(getRandomPiece())
         }
     }
 
-    const handleKeyUp = (event: KeyboardEvent) => {
+    const handleKeyDown = useCallback((event: KeyboardEvent) => {
+            if (!currentPieceRef.current || gameLost) {
+                return
+            }
+            let newPiece: Piece = copyPiece(currentPieceRef.current)
+            switch (event.key) {
+                case 'a':
+                case 'A':
+                case'ArrowLeft' :
+                    newPiece.position.x -= 1
+                    if (testMovementPossible(fixedGrid, newPiece)) {
+                        setCurrentPiece(newPiece)
+                    }
+                    break;
+                case 'd' :
+                case'D':
+                case 'ArrowRight' :
+                    newPiece.position.x += 1
+                    if (testMovementPossible(fixedGrid, newPiece)) {
+                        setCurrentPiece(newPiece)
+                    }
+                    break;
+                case 'w':
+                case'W':
+                case'ArrowUp':
+                    if (newPiece.rotation == 3)
+                        newPiece.rotation = 0
+                    else
+                        newPiece.rotation++
+                    newPiece.matrix = tetrominos[newPiece.type][newPiece.rotation]
+                    if (testMovementPossible(fixedGrid, newPiece)) {
+                        setCurrentPiece(newPiece)
+                    }
+                    break;
+                case 's':
+                case 'S':
+                case 'ArrowDown':
+                    setToggleTimer(prevToggleTimer => !prevToggleTimer)
+                    setTimeout(() => fall(newPiece), 0)
+                    break;
+                case ' ':
+                    setToggleTimer(!toggleTimer)
+                    newPiece = forcePieceDown(fixedGrid, newPiece)
+                    setFixedGrid(prevGrid => (fixPieceIntoGrid(newPiece, prevGrid)))
+                    setCurrentPiece(getRandomPiece())
+                    break;
+            }
+        }, []
+    )
+
+    const handleKeyUp = useCallback((event: KeyboardEvent) => {
         if (event.key !== 'ArrowDown' && event.key !== 's' && event.key !== 'S') {
             return
         }
-    }
+    }, [])
+
+    useEffect(() => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current)
+            timerRef.current = null
+        }
+        timerRef.current = setInterval(() => {
+            if (currentPieceRef.current)
+                fall(copyPiece(currentPieceRef.current))
+        }, 1000)
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current)
+                timerRef.current = null
+            }
+        }
+    }, [toggleTimer]);
 
 
     useEffect(() => {
