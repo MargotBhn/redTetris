@@ -22,40 +22,40 @@ class Game {
 
         // initialize bag
         this.pieceBag = [];
-        console.log('[Game] Initialized empty pieceBag:', this.pieceBag);
+        // console.log('[Game] Initialized empty pieceBag:', this.pieceBag);
 
         // Pre-fill the queue with exactly two shuffled bags (14 pieces)
-        console.log('[Game] Generating first 7-piece bag...');
+        // console.log('[Game] Generating first 7-piece bag...');
         this.pushNewBagToQueue();
-        console.log('[Game] pieceQueue after first bag:', [...this.pieceQueue]);
+        // console.log('[Game] pieceQueue after first bag:', [...this.pieceQueue]);
 
-        console.log('[Game] Generating second 7-piece bag...');
+        // console.log('[Game] Generating second 7-piece bag...');
         this.pushNewBagToQueue();
-        console.log('[Game] pieceQueue after second bag:', [...this.pieceQueue], 'length=', this.pieceQueue.length);
+        // console.log('[Game] pieceQueue after second bag:', [...this.pieceQueue], 'length=', this.pieceQueue.length);
     }
 
     // Fisher-Yates shuffle for the bag
     private shuffleBag() {
-        console.log('[Game] Shuffling bag (before):', [...this.pieceBag]);
+        // console.log('[Game] Shuffling bag (before):', [...this.pieceBag]);
         for (let i = this.pieceBag.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             const tmp = this.pieceBag[i]!;
             this.pieceBag[i] = this.pieceBag[j]!;
             this.pieceBag[j] = tmp;
         }
-        console.log('[Game] Shuffling bag (after):', [...this.pieceBag]);
+        // console.log('[Game] Shuffling bag (after):', [...this.pieceBag]);
     }
 
     // Refill the bag with the 7 piece types and shuffle
     private refillBag() {
         this.pieceBag = [...Game.PIECE_TYPES];
-        console.log('[Game] Refilled bag with PIECE_TYPES:', [...this.pieceBag]);
+        // console.log('[Game] Refilled bag with PIECE_TYPES:', [...this.pieceBag]);
         this.shuffleBag();
     }
 
     // Push one shuffled bag of 7 types into the shared queue
     private pushNewBagToQueue() {
-        console.log('[Game] pushNewBagToQueue() called. Current pieceBag length:', this.pieceBag.length);
+        // console.log('[Game] pushNewBagToQueue() called. Current pieceBag length:', this.pieceBag.length);
         if (this.pieceBag.length === 0) {
             this.refillBag();
         }
@@ -66,7 +66,7 @@ class Game {
             pushed.push(type);
             this.pieceQueue.push(type);
         }
-        console.log('[Game] Pushed bag to queue:', pushed, 'Queue length delta:', this.pieceQueue.length - initialQueueLen, 'New queue length:', this.pieceQueue.length);
+        // console.log('[Game] Pushed bag to queue:', pushed, 'Queue length delta:', this.pieceQueue.length - initialQueueLen, 'New queue length:', this.pieceQueue.length);
     }
 
     // Ensure the shared queue has at least `n` items available

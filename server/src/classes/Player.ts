@@ -7,6 +7,7 @@ class Player {
     isAlive: boolean;
     isLeader: boolean;
     pieceIndex: number //index de la piece sur laquelle il est. A incrementer a chaque fois qu'il pose une piece
+    spectrum: number[]; // hauteur maximale par colonne (10 colonnes)
 
     constructor(name: string, socketId: string, isLeader: boolean) {
         this.name = name;
@@ -15,6 +16,7 @@ class Player {
         this.isAlive = true;
         this.isLeader = isLeader
         this.pieceIndex = 0;
+        this.spectrum = Array(10).fill(0);
     }
 
     private initBoard(): Board {

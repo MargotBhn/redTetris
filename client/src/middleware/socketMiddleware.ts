@@ -26,6 +26,15 @@ export interface ServerPiece {
     seed?: number;       // optionnel (génération déterministe)
 }
 
+/**
+ * Données de spectrum envoyées par les autres joueurs
+ */
+export interface OpponentSpectrum {
+    socketId: string;
+    name: string;
+    spectrum: number[];
+}
+
 const createMiddleware = () => {
     let socket: Socket | null = null
 

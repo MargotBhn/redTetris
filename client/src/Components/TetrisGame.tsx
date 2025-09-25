@@ -158,8 +158,8 @@ function gameIsLost(grid: Cell[][], piece: Piece | null) {
 
     for (let y = 0; y < piece.matrix.length; y++) {
         for (let x = 0; x < piece.matrix[y].length; x++) {
-            if (piece.matrix[y][x] == 1) {
-                if (grid[y + piece.position.y][x + piece.position.x].value !== 'E')
+            if (piece?.matrix[y][x] == 1) {
+                if (grid[y + piece?.position.y][x + piece?.position.x].value !== 'E')
                     return true
             }
         }
@@ -175,7 +175,7 @@ export default function TetrisGame() {
     const [gameLost, setGameLost] = useState(false)
     const currentPieceRef = useRef<Piece | null>(null);
     const [toggleTimer, setToggleTimer] = useState(false);
-    const timerRef = useRef<number | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const fall = (newPiece: Piece) => {
         newPiece.position.y += 1
@@ -245,19 +245,19 @@ export default function TetrisGame() {
 
     useEffect(() => {
         if (timerRef.current) {
-            clearInterval(timerRef.current)
-            timerRef.current = null
+            clearInterval(timerRef.current);
+            timerRef.current = null;
         }
         timerRef.current = setInterval(() => {
             if (currentPieceRef.current)
-                fall(copyPiece(currentPieceRef.current))
-        }, 1000)
+                fall(copyPiece(currentPieceRef.current));
+        }, 1000);
         return () => {
             if (timerRef.current) {
-                clearInterval(timerRef.current)
-                timerRef.current = null
+                clearInterval(timerRef.current);
+                timerRef.current = null;
             }
-        }
+        };
     }, [toggleTimer]);
 
 

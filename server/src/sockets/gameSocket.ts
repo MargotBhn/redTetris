@@ -13,6 +13,23 @@ export function updateNewLeader(io: Server, game: Game, socketId: string) {
     io.to(game.roomName).emit("newLeader", socketId);
 }
 
+export function sendSpectrums(
+    game: Game,
+    io: Server,
+    targetSocket?: Socket
+) {
+    const payload = game.players.map(p => ({
+        socketId: p.socketId,
+        name: p.name,
+        spectrum: Array.isArray((p as any).spectrum) ? (p as any).spectrum : Array(10).fill(0)
+    }));
+    if (targetSocket) {
+        targetSocket.emit('spectrums:update', payload);
+    } else {
+        io.to(game.roomName).emit('spectrums:update', payload);
+    }
+}
+
 // Helper: chunk an array into bags of size 7
 function chunkIntoBags<T>(arr: T[], size = 7): T[][] {
     const out: T[][] = [];
@@ -62,5 +79,22 @@ export function handleGame(
         socket.emit('pieces:queue', { bags, total: queue.length });
     });
 
+    // Player updates their spectrum
+    socket.on('spectrum:update', (room: string, spectrum: number[]) => {
+        const game = games.get(room);
+        if (!game) return;
+        const player = game.players.find(p => p.socketId === socket.id);
+        if (!player) return;
+
+        (player as any).spectrum = Array.isArray(spectrum) ? spectrum.slice(0, 10) : Array(10).fill(0);
+        sendSpectrums(game, io);
+    });
+
+    // Client asks for current spectrums snapshot
+    socket.on('spectrums:get', (room: string) => {
+        const game = games.get(room);
+        if (!game) return;
+        sendSpectrums(game, io, socket);
+    });
 }
 
