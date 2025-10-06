@@ -13,7 +13,6 @@
  * ensuring complete separation of concerns and easier maintenance.
  */
 import {io, Socket} from "socket.io-client";
-import {spec} from "node:test/reporters";
 
 /**
  * Types des pièces renvoyées par le serveur
