@@ -184,10 +184,10 @@ export default function TetrisGame() {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
 
-    const [pieceIndex, setPieceIndex] = useState<number | null>(null);
+    const [pieceIndex, setPieceIndex] = useState<number>(-1);
     const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
     const [nextPiece, setNextPiece] = useState<Piece | null>(null);
-    const [piecesBag, setPiecesBag] = useState<Piece[] | null>(null);
+    const [piecesBag, setPiecesBag] = useState<Piece[]>([]);
 
     const [gameLost, setGameLost] = useState(false)
     const currentPieceRef = useRef<Piece | null>(null);
@@ -201,7 +201,9 @@ export default function TetrisGame() {
             setCurrentPiece(newPiece)
         } else {
             setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
-            setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
+            if (pieceIndex) {
+                setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
+            }
         }
     }
 
@@ -310,6 +312,10 @@ export default function TetrisGame() {
         if (gameLost) {
             document.removeEventListener('keydown', handleKeyDown)
             document.removeEventListener('keyup', handleKeyUp)
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
         }
     }, [gameLost]);
 
@@ -328,16 +334,17 @@ export default function TetrisGame() {
             className="fixed top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat overflow-hidden"
             style={{backgroundImage: `url(${bgSimple})`}}
         >
-            <span>{pieceIndex}</span>
-
             <div className="flex flex-col items-center justify-center h-screen">
                 {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
                 <div className="flex">
-                    <Board grid={grid}/>
-                    <div className="flex">
-                        <NextPiece piece={nextPiece}/>
-                    </div>
                     <div className="text-white">Mettre les autres players ici</div>
+                    <Board grid={grid}/>
+                    <div className="flex flex-col">
+                        {/*<div className="flex justify-center">*/}
+                        <NextPiece piece={nextPiece}/>
+                        {/*</div>*/}
+
+                    </div>
                 </div>
             </div>
         </div>
