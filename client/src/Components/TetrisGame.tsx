@@ -3,6 +3,7 @@ import {tetrominos} from "./Pieces.ts";
 import Board from "./Board.tsx";
 import GameOver from "./GameOver.tsx";
 import bgSimple from "../assets/BackgroundSimple.png";
+import NextPiece from "./NextPiece.tsx";
 
 
 // RULES
@@ -32,11 +33,20 @@ interface PiecePosition {
     y: number
 }
 
-interface Piece {
+export interface Piece {
     type: PieceType,
     position: PiecePosition
     rotation: number,
-    matrix: number[][]
+    matrix: number[][],
+    color: string
+}
+
+function getPieceBag(): Piece[] {
+    let bag = []
+    for (let i = 0; i < 7; i++) {
+        bag.push(getRandomPiece());
+    }
+    return bag
 }
 
 function getRandomPiece(): Piece {
@@ -49,6 +59,7 @@ function getRandomPiece(): Piece {
         position: {x: 3, y: spawnY},
         rotation: 0,
         matrix: tetrominos[type][0],
+        color: getCellColor(type),
     }
 }
 
@@ -81,7 +92,8 @@ function copyPiece(piece: Piece) {
         type: piece.type,
         position: {...piece.position},
         rotation: piece.rotation,
-        matrix: piece.matrix.map((row) => [...row])
+        matrix: piece.matrix.map((row) => [...row]),
+        color: piece.color,
     }
 }
 
@@ -172,9 +184,10 @@ export default function TetrisGame() {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
 
-    const [pieceIndex, setPieceIndex] = useState<number>(0);
+    const [pieceIndex, setPieceIndex] = useState<number | null>(null);
     const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
-    // const [nextPiece, setNextPiece] = useState<Piece | null>(null);
+    const [nextPiece, setNextPiece] = useState<Piece | null>(null);
+    const [piecesBag, setPiecesBag] = useState<Piece[] | null>(null);
 
     const [gameLost, setGameLost] = useState(false)
     const currentPieceRef = useRef<Piece | null>(null);
@@ -189,7 +202,6 @@ export default function TetrisGame() {
         } else {
             setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
             setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
-            setCurrentPiece(getRandomPiece())
         }
     }
 
@@ -237,7 +249,7 @@ export default function TetrisGame() {
                     setToggleTimer(!toggleTimer)
                     newPiece = forcePieceDown(fixedGrid, newPiece)
                     setFixedGrid(prevGrid => (fixPieceIntoGrid(newPiece, prevGrid)))
-                    setCurrentPiece(getRandomPiece())
+                    setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
                     break;
             }
         }, []
@@ -248,6 +260,19 @@ export default function TetrisGame() {
             return
         }
     }, [])
+
+    useEffect(() => {
+        if (gameLost) return;
+        if (piecesBag) {
+            setCurrentPiece(piecesBag[pieceIndex])
+            setNextPiece(piecesBag[pieceIndex + 1])
+        }
+
+        // get new bag
+        if (pieceIndex % 7 >= 5 && piecesBag?.length <= pieceIndex + 3) {
+            setPiecesBag(prevBag => [...prevBag, ...getPieceBag()])
+        }
+    }, [pieceIndex]);
 
     useEffect(() => {
         if (timerRef.current) {
@@ -268,7 +293,9 @@ export default function TetrisGame() {
 
 
     useEffect(() => {
-        setCurrentPiece(getRandomPiece())
+        setPiecesBag(getPieceBag())
+        setPieceIndex(0)
+
         document.addEventListener('keydown', handleKeyDown)
         document.addEventListener('keyup', handleKeyUp)
 
@@ -277,6 +304,7 @@ export default function TetrisGame() {
             document.removeEventListener('keyup', handleKeyUp)
         }
     }, []);
+
 
     useEffect(() => {
         if (gameLost) {
@@ -306,6 +334,9 @@ export default function TetrisGame() {
                 {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
                 <div className="flex">
                     <Board grid={grid}/>
+                    <div className="flex">
+                        <NextPiece piece={nextPiece}/>
+                    </div>
                     <div className="text-white">Mettre les autres players ici</div>
                 </div>
             </div>
