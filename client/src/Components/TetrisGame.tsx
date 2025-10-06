@@ -167,6 +167,29 @@ function gameIsLost(grid: Cell[][], piece: Piece | null) {
     return false
 }
 
+function clearCompleteLines(grid: Cell[][]) {
+    let linesCleared = 0;
+    const newGrid = grid.filter((row) => {
+        const isComplete = row.every(cell => cell.value !== 'E');
+        if (isComplete) {
+            linesCleared++;
+            return false;
+        }
+        return true;
+    });
+    while (newGrid.length < GRID_HEIGHT) {
+        newGrid.unshift(
+            Array(GRID_WIDTH).fill(0).map(() => ({
+                color: "bg-gray-200",
+                value: 'E',
+                locked: false,
+                blocked: false,
+            }))
+        );
+    }
+
+    return { newGrid, linesCleared };
+}
 
 export default function TetrisGame() {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
@@ -175,6 +198,7 @@ export default function TetrisGame() {
     const [pieceIndex, setPieceIndex] = useState<number>(0);
     const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
     // const [nextPiece, setNextPiece] = useState<Piece | null>(null);
+    const [score, setScore] = useState<number>(0);
 
     const [gameLost, setGameLost] = useState(false)
     const currentPieceRef = useRef<Piece | null>(null);
@@ -187,7 +211,14 @@ export default function TetrisGame() {
         if (testMovementPossible(fixedGrid, newPiece)) {
             setCurrentPiece(newPiece)
         } else {
-            setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
+            const gridWithPiece = fixPieceIntoGrid(currentPieceRef.current, fixedGrid)
+            // setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
+            const { newGrid, linesCleared } = clearCompleteLines(gridWithPiece)
+
+            setFixedGrid(newGrid)
+            if (linesCleared > 0) {
+                setScore(prevScore => prevScore + linesCleared * 100)
+            }
             setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
             setCurrentPiece(getRandomPiece())
         }
@@ -236,7 +267,14 @@ export default function TetrisGame() {
                 case ' ':
                     setToggleTimer(!toggleTimer)
                     newPiece = forcePieceDown(fixedGrid, newPiece)
-                    setFixedGrid(prevGrid => (fixPieceIntoGrid(newPiece, prevGrid)))
+                    const gridWithPiece = fixPieceIntoGrid(newPiece, fixedGrid);
+                    const { newGrid, linesCleared } = clearCompleteLines(gridWithPiece);
+
+                    setFixedGrid(newGrid);
+                    if (linesCleared > 0) {
+                        setScore(prevScore => prevScore + linesCleared);
+                    }
+
                     setCurrentPiece(getRandomPiece())
                     break;
             }
@@ -304,6 +342,7 @@ export default function TetrisGame() {
 
             <div className="flex flex-col items-center justify-center h-screen">
                 {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
+                <div className="text-white text-2xl mb-4">Score: {score}</div>
                 <div className="flex">
                     <Board grid={grid}/>
                     <div className="text-white">Mettre les autres players ici</div>
