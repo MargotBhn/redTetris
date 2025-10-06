@@ -3,6 +3,7 @@ import {useEffect, useState} from "react";
 import WaitingRoom from "./WaitingRoom.tsx";
 import bgSimple from "../assets/BackgroundSimple.png"
 import {socketMiddleware} from "../middleware/socketMiddleware.ts";
+import type {ServerPieceType} from "../middleware/socketMiddleware.ts"
 import TetrisGame from "./TetrisGame.tsx";
 
 // import WaitingRoom from "./WaitingRoom.tsx";
@@ -36,8 +37,6 @@ export default function GameLobby() {
     const [socketId, setSocketId] = useState<string | undefined>(undefined)
     const [isLeader, setIsLeader] = useState<boolean>(false)
     const [listPlayers, setListPlayers] = useState<PlayerName[]>([])
-    // Snapshot de la file des pièces pour debug/visualisation
-    const [pieceQueueSnapshot, setPieceQueueSnapshot] = useState<{ bags: string[][], total: number } | null>(null)
 
     useEffect(() => {
         //check error inside URL
@@ -95,17 +94,12 @@ export default function GameLobby() {
             setStatus('Game')
         })
 
-        // Écoute des sacs/queue de pièces
-        const onPiecesQueue = (payload: { bags: string[][], total: number }) => {
-            console.log('pieces:queue snapshot', payload)
-            setPieceQueueSnapshot(payload)
-            console.log("PieceQueueSnapshot", pieceQueueSnapshot);
-        }
-        socketMiddleware.on('pieces:queue', onPiecesQueue)
+        socketMiddleware.onPieceBag((bag: ServerPieceType[]) => {
+                console.log(bag)
+            }
+        )
 
-        return () => {
-            socketMiddleware.off('pieces:queue', onPiecesQueue)
-        }
+
     }, [socketId, room]);
 
     const startGame = () => {

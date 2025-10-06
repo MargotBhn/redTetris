@@ -171,11 +171,16 @@ function gameIsLost(grid: Cell[][], piece: Piece | null) {
 export default function TetrisGame() {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
+
+    const [pieceIndex, setPieceIndex] = useState<number>(0);
     const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
+    // const [nextPiece, setNextPiece] = useState<Piece | null>(null);
+
     const [gameLost, setGameLost] = useState(false)
     const currentPieceRef = useRef<Piece | null>(null);
     const [toggleTimer, setToggleTimer] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
 
     const fall = (newPiece: Piece) => {
         newPiece.position.y += 1
@@ -183,6 +188,7 @@ export default function TetrisGame() {
             setCurrentPiece(newPiece)
         } else {
             setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
+            setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
             setCurrentPiece(getRandomPiece())
         }
     }
@@ -294,6 +300,8 @@ export default function TetrisGame() {
             className="fixed top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat overflow-hidden"
             style={{backgroundImage: `url(${bgSimple})`}}
         >
+            <span>{pieceIndex}</span>
+
             <div className="flex flex-col items-center justify-center h-screen">
                 {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
                 <div className="flex">
