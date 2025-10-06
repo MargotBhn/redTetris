@@ -3,6 +3,7 @@ import {tetrominos} from "./Pieces.ts";
 import Board from "./Board.tsx";
 import GameOver from "./GameOver.tsx";
 import bgSimple from "../assets/BackgroundSimple.png";
+import NextPiece from "./NextPiece.tsx";
 
 
 // RULES
@@ -32,11 +33,20 @@ interface PiecePosition {
     y: number
 }
 
-interface Piece {
+export interface Piece {
     type: PieceType,
     position: PiecePosition
     rotation: number,
-    matrix: number[][]
+    matrix: number[][],
+    color: string
+}
+
+function getPieceBag(): Piece[] {
+    let bag = []
+    for (let i = 0; i < 7; i++) {
+        bag.push(getRandomPiece());
+    }
+    return bag
 }
 
 function getRandomPiece(): Piece {
@@ -49,6 +59,7 @@ function getRandomPiece(): Piece {
         position: {x: 3, y: spawnY},
         rotation: 0,
         matrix: tetrominos[type][0],
+        color: getCellColor(type),
     }
 }
 
@@ -81,7 +92,8 @@ function copyPiece(piece: Piece) {
         type: piece.type,
         position: {...piece.position},
         rotation: piece.rotation,
-        matrix: piece.matrix.map((row) => [...row])
+        matrix: piece.matrix.map((row) => [...row]),
+        color: piece.color,
     }
 }
 
@@ -173,6 +185,7 @@ function clearCompleteLines(grid: Cell[][]) {
         const isComplete = row.every(cell => cell.value !== 'E');
         if (isComplete) {
             linesCleared++;
+            console.log('Line cleared! Total:', linesCleared);
             return false;
         }
         return true;
@@ -188,16 +201,18 @@ function clearCompleteLines(grid: Cell[][]) {
         );
     }
 
-    return { newGrid, linesCleared };
+    return {newGrid, linesCleared};
 }
 
 export default function TetrisGame() {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
 
-    const [pieceIndex, setPieceIndex] = useState<number>(0);
+    const [pieceIndex, setPieceIndex] = useState<number>(-1);
     const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
-    // const [nextPiece, setNextPiece] = useState<Piece | null>(null);
+    const [nextPiece, setNextPiece] = useState<Piece | null>(null);
+    const [piecesBag, setPiecesBag] = useState<Piece[]>([]);
+
     const [score, setScore] = useState<number>(0);
 
     const [gameLost, setGameLost] = useState(false)
@@ -213,14 +228,14 @@ export default function TetrisGame() {
         } else {
             const gridWithPiece = fixPieceIntoGrid(currentPieceRef.current, fixedGrid)
             // setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
-            const { newGrid, linesCleared } = clearCompleteLines(gridWithPiece)
+            console.log(gridWithPiece)
+            const {newGrid, linesCleared} = clearCompleteLines(gridWithPiece)
 
             setFixedGrid(newGrid)
             if (linesCleared > 0) {
                 setScore(prevScore => prevScore + linesCleared * 100)
             }
             setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
-            setCurrentPiece(getRandomPiece())
         }
     }
 
@@ -268,14 +283,13 @@ export default function TetrisGame() {
                     setToggleTimer(!toggleTimer)
                     newPiece = forcePieceDown(fixedGrid, newPiece)
                     const gridWithPiece = fixPieceIntoGrid(newPiece, fixedGrid);
-                    const { newGrid, linesCleared } = clearCompleteLines(gridWithPiece);
+                    const {newGrid, linesCleared} = clearCompleteLines(gridWithPiece);
 
                     setFixedGrid(newGrid);
                     if (linesCleared > 0) {
                         setScore(prevScore => prevScore + linesCleared);
                     }
-
-                    setCurrentPiece(getRandomPiece())
+                    setPieceIndex(prevPieceIndex => prevPieceIndex + 1);
                     break;
             }
         }, []
@@ -286,6 +300,19 @@ export default function TetrisGame() {
             return
         }
     }, [])
+
+    useEffect(() => {
+        if (gameLost) return;
+        if (piecesBag) {
+            setCurrentPiece(piecesBag[pieceIndex])
+            setNextPiece(piecesBag[pieceIndex + 1])
+        }
+
+        // get new bag
+        if (pieceIndex % 7 >= 5 && piecesBag?.length <= pieceIndex + 3) {
+            setPiecesBag(prevBag => [...prevBag, ...getPieceBag()])
+        }
+    }, [pieceIndex]);
 
     useEffect(() => {
         if (timerRef.current) {
@@ -306,7 +333,9 @@ export default function TetrisGame() {
 
 
     useEffect(() => {
-        setCurrentPiece(getRandomPiece())
+        setPiecesBag(getPieceBag())
+        setPieceIndex(0)
+
         document.addEventListener('keydown', handleKeyDown)
         document.addEventListener('keyup', handleKeyUp)
 
@@ -320,6 +349,10 @@ export default function TetrisGame() {
         if (gameLost) {
             document.removeEventListener('keydown', handleKeyDown)
             document.removeEventListener('keyup', handleKeyUp)
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
         }
     }, [gameLost]);
 
@@ -344,8 +377,14 @@ export default function TetrisGame() {
                 {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
                 <div className="text-white text-2xl mb-4">Score: {score}</div>
                 <div className="flex">
-                    <Board grid={grid}/>
                     <div className="text-white">Mettre les autres players ici</div>
+                    <Board grid={grid}/>
+                    <div className="flex flex-col">
+                        {/*<div className="flex justify-center">*/}
+                        <NextPiece piece={nextPiece}/>
+                        {/*</div>*/}
+
+                    </div>
                 </div>
             </div>
         </div>
