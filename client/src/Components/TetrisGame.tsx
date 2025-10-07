@@ -11,7 +11,7 @@ import NextPiece from "./NextPiece.tsx";
 // Completing a line causes it to disappear
 // When a player clears lines, opponents receive n - 1 indestructible penalty lines
 // at the bottom of their fields
-// Players can see their opponents’ names and a "spectrum" view of their fields.
+// Players can see their opponents' names and a "spectrum" view of their fields.
 
 // matrix[row][col]   | ->
 // gameGrid[y][x]
@@ -73,7 +73,7 @@ function getCellColor(value: string) {
         'Z': 'bg-red-500',
         'J': 'bg-blue-500',
         'L': 'bg-orange-500',
-        'B': 'bg-black-500', // Blocked
+        'B': 'bg-gray-800', // Blocked
     };
     return colors[value];
 }
@@ -154,14 +154,19 @@ function fixPieceIntoGrid(piece: Piece | null, grid: Cell[][]) {
 }
 
 function forcePieceDown(grid: Cell[][], piece: Piece): Piece {
-    for (let boardY = GRID_HEIGHT - 1; boardY >= 0; boardY--) {
-        piece.position.y = boardY
-        if (testMovementPossible(grid, piece)) {
-            return piece
+    let newPiece = copyPiece(piece);
+
+    // On descend la pièce ligne par ligne jusqu'à ce qu'elle ne puisse plus descendre
+    while (true) {
+        newPiece.position.y += 1;
+        if (!testMovementPossible(grid, newPiece)) {
+            // On ne peut plus descendre, on remonte d'une ligne
+            newPiece.position.y -= 1;
+            break;
         }
     }
-    return piece
 
+    return newPiece;
 }
 
 function gameIsLost(grid: Cell[][], piece: Piece | null) {
@@ -181,16 +186,18 @@ function gameIsLost(grid: Cell[][], piece: Piece | null) {
 }
 
 function clearCompleteLines(grid: Cell[][]) {
-
     let linesCleared = 0;
     const newGrid = grid.filter((row) => {
         const isComplete = row.every(cell => cell.value !== 'E');
-        if (isComplete) {
+        const hasBlockedCell = row.some(cell => cell.blocked || cell.value === 'B');
+        if (isComplete && !hasBlockedCell) {
             linesCleared++;
-            return false;
+            return false; // on supprime cette ligne
         }
-        return true;
+        return true; // sinon on la garde
     });
+
+    // On complète la grille pour garder la même hauteur
     while (newGrid.length < GRID_HEIGHT) {
         newGrid.unshift(
             Array(GRID_WIDTH).fill(0).map(() => ({
@@ -201,7 +208,27 @@ function clearCompleteLines(grid: Cell[][]) {
             }))
         );
     }
+
     return {newGrid, linesCleared};
+}
+
+function addGarbageLine(grid: Cell[][], activePiece: Piece | null): { newGrid: Cell[][], newPiece: Piece | null } {
+    // Copie de la grille
+    const newGrid = grid.slice(1); // supprime la première ligne
+
+    // Création de la ligne bloquée
+    const blockedRow = Array(GRID_WIDTH).fill(0).map(() => ({
+        value: 'B',
+        color: getCellColor('B'),
+        locked: true,
+        blocked: true,
+    }));
+    newGrid.push(blockedRow);
+
+    // On remonte la pièce active d'une ligne si elle existe
+    let newPiece = activePiece ? { ...activePiece, position: { ...activePiece.position, y: Math.max(0, activePiece.position.y - 1) } } : null;
+
+    return { newGrid, newPiece };
 }
 
 export default function TetrisGame() {
@@ -219,6 +246,7 @@ export default function TetrisGame() {
     const currentPieceRef = useRef<Piece | null>(null);
     const [toggleTimer, setToggleTimer] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [garbageCountdown, setGarbageCountdown] = useState<number>(10);
 
     const lastInputTimeRef = useRef(0);
     const fixedGridRef = useRef<Cell[][]>([]);
@@ -226,9 +254,16 @@ export default function TetrisGame() {
 
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
+    // On utilise une ref pour savoir si le changement vient d'une garbage line
+    const isGarbageUpdateRef = useRef(false);
+
     useEffect(() => {
         fixedGridRef.current = fixedGrid
-        setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
+        // Ne pas incrémenter pieceIndex si c'est une garbage line
+        if (!isGarbageUpdateRef.current) {
+            setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
+        }
+        isGarbageUpdateRef.current = false;
     }, [fixedGrid])
 
     const fall = (newPiece: Piece) => {
@@ -374,6 +409,36 @@ export default function TetrisGame() {
         }
     }, [currentPiece]);
 
+    useEffect(() => {
+        if (gameLost) return;
+
+        const countdownInterval = setInterval(() => {
+            setGarbageCountdown(prev => prev <= 1 ? 10 : prev - 1);
+        }, 1000);
+
+        const garbageInterval = setInterval(() => {
+            isGarbageUpdateRef.current = true; // Marquer que c'est une garbage line
+
+            setFixedGrid(prevGrid => {
+                const { newGrid, newPiece } = addGarbageLine(prevGrid, currentPieceRef.current);
+
+                // On met à jour la pièce active directement
+                if (newPiece) {
+                    currentPieceRef.current = newPiece;
+                    setCurrentPiece(newPiece);
+                }
+
+                return newGrid;
+            });
+
+            setGarbageCountdown(10);
+        }, 10000);
+
+        return () => {
+            clearInterval(countdownInterval);
+            clearInterval(garbageInterval);
+        };
+    }, [gameLost]);
 
     return (
 
@@ -386,6 +451,9 @@ export default function TetrisGame() {
             <div className="flex flex-col items-center justify-center h-screen">
                 {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
                 <div className="text-white text-2xl mb-4">Score: {score}</div>
+                <div className="text-red-400 text-lg mb-2">
+                    Garbage line dans {garbageCountdown}s
+                </div>
                 <div className="flex">
                     <div className="text-white">Mettre les autres players ici</div>
                     <Board grid={grid}/>
