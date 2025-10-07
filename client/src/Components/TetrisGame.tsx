@@ -171,8 +171,9 @@ function gameIsLost(grid: Cell[][], piece: Piece | null) {
     for (let y = 0; y < piece.matrix.length; y++) {
         for (let x = 0; x < piece.matrix[y].length; x++) {
             if (piece?.matrix[y][x] == 1) {
-                if (grid[y + piece?.position.y][x + piece?.position.x].value !== 'E')
+                if (grid[y + piece?.position.y][x + piece?.position.x].value !== 'E') {
                     return true
+                }
             }
         }
     }
@@ -180,12 +181,12 @@ function gameIsLost(grid: Cell[][], piece: Piece | null) {
 }
 
 function clearCompleteLines(grid: Cell[][]) {
+
     let linesCleared = 0;
     const newGrid = grid.filter((row) => {
         const isComplete = row.every(cell => cell.value !== 'E');
         if (isComplete) {
             linesCleared++;
-            console.log('Line cleared! Total:', linesCleared);
             return false;
         }
         return true;
@@ -200,7 +201,6 @@ function clearCompleteLines(grid: Cell[][]) {
             }))
         );
     }
-
     return {newGrid, linesCleared};
 }
 
@@ -220,22 +220,29 @@ export default function TetrisGame() {
     const [toggleTimer, setToggleTimer] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+    const lastInputTimeRef = useRef(0);
+    const fixedGridRef = useRef<Cell[][]>([]);
+    const INPUT_DELAY = 100;
+
+
+    // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
+    useEffect(() => {
+        fixedGridRef.current = fixedGrid
+        setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
+    }, [fixedGrid])
 
     const fall = (newPiece: Piece) => {
         newPiece.position.y += 1
-        if (testMovementPossible(fixedGrid, newPiece)) {
+        if (testMovementPossible(fixedGridRef.current, newPiece)) {
             setCurrentPiece(newPiece)
         } else {
-            const gridWithPiece = fixPieceIntoGrid(currentPieceRef.current, fixedGrid)
-            // setFixedGrid(prevGrid => (fixPieceIntoGrid(currentPieceRef.current, prevGrid)))
-            console.log(gridWithPiece)
+            const gridWithPiece = fixPieceIntoGrid(currentPieceRef.current, fixedGridRef.current)
             const {newGrid, linesCleared} = clearCompleteLines(gridWithPiece)
 
             setFixedGrid(newGrid)
             if (linesCleared > 0) {
-                setScore(prevScore => prevScore + linesCleared * 100)
+                setScore(prevScore => prevScore + linesCleared)
             }
-            setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
         }
     }
 
@@ -243,13 +250,16 @@ export default function TetrisGame() {
             if (!currentPieceRef.current || gameLost) {
                 return
             }
+            const now = Date.now();
+            if (now - lastInputTimeRef.current < INPUT_DELAY) return;
+            lastInputTimeRef.current = now;
             let newPiece: Piece = copyPiece(currentPieceRef.current)
             switch (event.key) {
                 case 'a':
                 case 'A':
                 case'ArrowLeft' :
                     newPiece.position.x -= 1
-                    if (testMovementPossible(fixedGrid, newPiece)) {
+                    if (testMovementPossible(fixedGridRef.current, newPiece)) {
                         setCurrentPiece(newPiece)
                     }
                     break;
@@ -257,7 +267,7 @@ export default function TetrisGame() {
                 case'D':
                 case 'ArrowRight' :
                     newPiece.position.x += 1
-                    if (testMovementPossible(fixedGrid, newPiece)) {
+                    if (testMovementPossible(fixedGridRef.current, newPiece)) {
                         setCurrentPiece(newPiece)
                     }
                     break;
@@ -269,7 +279,7 @@ export default function TetrisGame() {
                     else
                         newPiece.rotation++
                     newPiece.matrix = tetrominos[newPiece.type][newPiece.rotation]
-                    if (testMovementPossible(fixedGrid, newPiece)) {
+                    if (testMovementPossible(fixedGridRef.current, newPiece)) {
                         setCurrentPiece(newPiece)
                     }
                     break;
@@ -281,15 +291,15 @@ export default function TetrisGame() {
                     break;
                 case ' ':
                     setToggleTimer(!toggleTimer)
-                    newPiece = forcePieceDown(fixedGrid, newPiece)
-                    const gridWithPiece = fixPieceIntoGrid(newPiece, fixedGrid);
+                    newPiece = forcePieceDown(fixedGridRef.current, newPiece)
+
+                    const gridWithPiece = fixPieceIntoGrid(newPiece, fixedGridRef.current);
                     const {newGrid, linesCleared} = clearCompleteLines(gridWithPiece);
 
                     setFixedGrid(newGrid);
                     if (linesCleared > 0) {
                         setScore(prevScore => prevScore + linesCleared);
                     }
-                    setPieceIndex(prevPieceIndex => prevPieceIndex + 1);
                     break;
             }
         }, []
