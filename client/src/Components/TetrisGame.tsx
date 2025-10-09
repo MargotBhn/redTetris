@@ -5,6 +5,7 @@ import GameOver from "./GameOver.tsx";
 import bgSimple from "../assets/BackgroundSimple.png";
 import NextPiece from "./NextPiece.tsx";
 import {socketMiddleware} from "../middleware/socketMiddleware.ts";
+import Spectrum from "./Spectrum.tsx";
 // import type {PieceType} from "../middleware/socketMiddleware.ts";
 
 
@@ -41,6 +42,12 @@ export interface Piece {
     rotation: number,
     matrix: number[][],
     color: string
+}
+
+interface PlayerSpectrum {
+    playerId: string;
+    playerName: string;
+    heights: number[];
 }
 
 // function getPieceBag(): Piece[] {
@@ -248,6 +255,22 @@ interface TetrisGameProps {
     room: string | undefined
 }
 
+function calculateSpectrum(grid: Cell[][]): number[] {
+    const heights: number[] = Array(GRID_WIDTH).fill(0);
+
+    for (let col = 0; col < GRID_WIDTH; col++) {
+        for (let row = 0; row < GRID_HEIGHT; row++) {
+            if (grid[row][col].value !== 'E') {
+                // La hauteur est calculée depuis le bas
+                heights[col] = GRID_HEIGHT - row;
+                break; // On a trouvé le bloc le plus haut de cette colonne
+            }
+        }
+    }
+
+    return heights;
+}
+
 export default function TetrisGame({room}: TetrisGameProps) {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
@@ -270,6 +293,7 @@ export default function TetrisGame({room}: TetrisGameProps) {
     const fixedGridRef = useRef<Cell[][]>([]);
     const INPUT_DELAY = 100;
 
+    const [opponentsSpectrums, setOpponentsSpectrums] = useState<PlayerSpectrum[]>([]);
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
     // On utilise une ref pour savoir si le changement vient d'une garbage line
@@ -486,6 +510,33 @@ export default function TetrisGame({room}: TetrisGameProps) {
         };
     }, [gameLost]);
 
+    // Envoie de la spectrum
+    useEffect(() => {
+        if (!room || gameLost) return;
+
+        const spectrumInterval = setInterval(() => {
+            const mySpectrum = calculateSpectrum(fixedGrid);
+            socketMiddleware.sendSpectrum(room, mySpectrum);
+        }, 1000); // Envoie toutes les secondes
+
+        return () => clearInterval(spectrumInterval);
+    }, [fixedGrid, room, gameLost]);
+
+    // Écoute les spectrums des adversaires
+    useEffect(() => {
+        socketMiddleware.onOpponentSpectrum((data: PlayerSpectrum) => {
+            setOpponentsSpectrums(prev => {
+                const index = prev.findIndex(p => p.playerId === data.playerId);
+                if (index >= 0) {
+                    const newSpectrums = [...prev];
+                    newSpectrums[index] = data;
+                    return newSpectrums;
+                }
+                return [...prev, data];
+            });
+        });
+    }, []);
+
     return (
 
         <div
@@ -501,7 +552,14 @@ export default function TetrisGame({room}: TetrisGameProps) {
                     Garbage line dans {garbageCountdown}s
                 </div>
                 <div className="flex">
-                    <div className="text-white">Mettre les autres players ici</div>
+                    <div className="flex flex-col gap-2">
+                        {opponentsSpectrums.map(spectrum => (
+                            <Spectrum
+                                playerName={spectrum.playerName}
+                                heights={spectrum.heights}
+                            />
+                        ))}
+                    </div>
                     <Board grid={grid}/>
                     <div className="flex flex-col">
                         {/*<div className="flex justify-center">*/}
