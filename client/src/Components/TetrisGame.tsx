@@ -4,6 +4,8 @@ import Board from "./Board.tsx";
 import GameOver from "./GameOver.tsx";
 import bgSimple from "../assets/BackgroundSimple.png";
 import NextPiece from "./NextPiece.tsx";
+import {socketMiddleware} from "../middleware/socketMiddleware.ts";
+// import type {PieceType} from "../middleware/socketMiddleware.ts";
 
 
 // RULES
@@ -41,25 +43,36 @@ export interface Piece {
     color: string
 }
 
-function getPieceBag(): Piece[] {
-    let bag = []
-    for (let i = 0; i < 7; i++) {
-        bag.push(getRandomPiece());
-    }
-    return bag
-}
+// function getPieceBag(): Piece[] {
+//     let bag = []
+//     for (let i = 0; i < 7; i++) {
+//         bag.push(getRandomPiece());
+//     }
+//     return bag
+// }
 
-function getRandomPiece(): Piece {
-    const pieces: PieceType[] = ['I', 'O', 'T', 'S', 'Z', 'J', 'L']
-    const randomPieceIndex = Math.floor(Math.random() * pieces.length);
-    const type = pieces[randomPieceIndex]
-    const spawnY = type == 'I' ? -1 : 0 // On remonte le I de 1, sinon il spawn trop bas
+// function getRandomPiece(): Piece {
+//     const pieces: PieceType[] = ['I', 'O', 'T', 'S', 'Z', 'J', 'L']
+//     const randomPieceIndex = Math.floor(Math.random() * pieces.length);
+//     const type = pieces[randomPieceIndex]
+//     const spawnY = type == 'I' ? -1 : 0 // On remonte le I de 1, sinon il spawn trop bas
+//     return {
+//         type: type,
+//         position: {x: 3, y: spawnY},
+//         rotation: 0,
+//         matrix: tetrominos[type][0],
+//         color: getCellColor(type),
+//     }
+// }
+
+function createPiece(pieceType: PieceType) {
+    const spawnY = pieceType == 'I' ? -1 : 0 // On remonte le I de 1, sinon il spawn trop bas
     return {
-        type: type,
+        type: pieceType,
         position: {x: 3, y: spawnY},
         rotation: 0,
-        matrix: tetrominos[type][0],
-        color: getCellColor(type),
+        matrix: tetrominos[pieceType][0],
+        color: getCellColor(pieceType),
     }
 }
 
@@ -73,7 +86,7 @@ function getCellColor(value: string) {
         'Z': 'bg-red-500',
         'J': 'bg-blue-500',
         'L': 'bg-orange-500',
-        'B': 'bg-gray-800', // Blocked
+        'B': 'bg-black-500', // Blocked
     };
     return colors[value];
 }
@@ -231,14 +244,19 @@ function addGarbageLine(grid: Cell[][], activePiece: Piece | null): { newGrid: C
     return { newGrid, newPiece };
 }
 
-export default function TetrisGame() {
+interface TetrisGameProps {
+    room: string | undefined
+}
+
+export default function TetrisGame({room}: TetrisGameProps) {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
 
     const [pieceIndex, setPieceIndex] = useState<number>(-1);
+    const pieceIndexRef = useRef(0)
     const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
     const [nextPiece, setNextPiece] = useState<Piece | null>(null);
-    const [piecesBag, setPiecesBag] = useState<Piece[]>([]);
+    const pieceBagRef = useRef<Piece[]>([]);
 
     const [score, setScore] = useState<number>(0);
 
@@ -265,6 +283,11 @@ export default function TetrisGame() {
         }
         isGarbageUpdateRef.current = false;
     }, [fixedGrid])
+
+
+    useEffect(() => {
+        pieceIndexRef.current = pieceIndex;
+    }, [pieceIndex]);
 
     const fall = (newPiece: Piece) => {
         newPiece.position.y += 1
@@ -348,16 +371,18 @@ export default function TetrisGame() {
 
     useEffect(() => {
         if (gameLost) return;
-        if (piecesBag) {
-            setCurrentPiece(piecesBag[pieceIndex])
-            setNextPiece(piecesBag[pieceIndex + 1])
+        if (pieceBagRef.current) {
+            setCurrentPiece(pieceBagRef.current[pieceIndex])
+            setNextPiece(pieceBagRef.current[pieceIndex + 1])
         }
 
+
         // get new bag
-        if (pieceIndex % 7 >= 5 && piecesBag?.length <= pieceIndex + 3) {
-            setPiecesBag(prevBag => [...prevBag, ...getPieceBag()])
+        if (pieceIndex % 7 >= 5 && pieceBagRef.current?.length <= pieceIndex + 3 && room) {
+            socketMiddleware.requestPieceBag(room)
         }
     }, [pieceIndex]);
+
 
     useEffect(() => {
         if (timerRef.current) {
@@ -378,11 +403,22 @@ export default function TetrisGame() {
 
 
     useEffect(() => {
-        setPiecesBag(getPieceBag())
-        setPieceIndex(0)
-
         document.addEventListener('keydown', handleKeyDown)
         document.addEventListener('keyup', handleKeyUp)
+
+        socketMiddleware.onPieceBag((bag: PieceType[]) => {
+            const newBag: Piece[] = bag.map((piece: PieceType) => createPiece(piece))
+            // console.log('new bag received', newBag)
+            pieceBagRef.current = [...pieceBagRef.current, ...newBag]
+            if (pieceIndexRef.current < 0) {
+                setPieceIndex(0)
+                setCurrentPiece(pieceBagRef.current[0])
+                setNextPiece(pieceBagRef.current[1])
+
+            }
+        })
+        if (room)
+            socketMiddleware.requestPieceBag(room)
 
         return () => {
             document.removeEventListener('keydown', handleKeyDown)
