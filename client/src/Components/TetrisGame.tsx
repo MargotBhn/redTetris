@@ -86,7 +86,7 @@ function getCellColor(value: string) {
         'Z': 'bg-red-500',
         'J': 'bg-blue-500',
         'L': 'bg-orange-500',
-        'B': 'bg-black-500', // Blocked
+        'B': 'bg-gray-800', // Blocked
     };
     return colors[value];
 }
@@ -264,7 +264,7 @@ export default function TetrisGame({room}: TetrisGameProps) {
     const currentPieceRef = useRef<Piece | null>(null);
     const [toggleTimer, setToggleTimer] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const [garbageCountdown, setGarbageCountdown] = useState<number>(10);
+    const [garbageCountdown, setGarbageCountdown] = useState<number>(30);
 
     const lastInputTimeRef = useRef(0);
     const fixedGridRef = useRef<Cell[][]>([]);
@@ -348,9 +348,14 @@ export default function TetrisGame({room}: TetrisGameProps) {
                     setTimeout(() => fall(newPiece), 0)
                     break;
                 case ' ':
-                    setToggleTimer(!toggleTimer)
-                    newPiece = forcePieceDown(fixedGridRef.current, newPiece)
+                    // 1. D'abord, on arrête complètement le timer
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                        timerRef.current = null;
+                    }
 
+                    // 2. On fixe la pièce
+                    newPiece = forcePieceDown(fixedGridRef.current, newPiece)
                     const gridWithPiece = fixPieceIntoGrid(newPiece, fixedGridRef.current);
                     const {newGrid, linesCleared} = clearCompleteLines(gridWithPiece);
 
@@ -358,6 +363,11 @@ export default function TetrisGame({room}: TetrisGameProps) {
                     if (linesCleared > 0) {
                         setScore(prevScore => prevScore + linesCleared);
                     }
+
+                    // 3. On redémarre le timer APRÈS (avec un petit délai pour être sûr)
+                    setTimeout(() => {
+                        setToggleTimer(prevToggleTimer => !prevToggleTimer);
+                    }, 50);
                     break;
             }
         }, []
@@ -379,6 +389,7 @@ export default function TetrisGame({room}: TetrisGameProps) {
 
         // get new bag
         if (pieceIndex % 7 >= 5 && pieceBagRef.current?.length <= pieceIndex + 3 && room) {
+            console.log('requesting new bag')
             socketMiddleware.requestPieceBag(room)
         }
     }, [pieceIndex]);
@@ -449,7 +460,7 @@ export default function TetrisGame({room}: TetrisGameProps) {
         if (gameLost) return;
 
         const countdownInterval = setInterval(() => {
-            setGarbageCountdown(prev => prev <= 1 ? 10 : prev - 1);
+            setGarbageCountdown(prev => prev <= 1 ? 30 : prev - 1);
         }, 1000);
 
         const garbageInterval = setInterval(() => {
@@ -467,8 +478,8 @@ export default function TetrisGame({room}: TetrisGameProps) {
                 return newGrid;
             });
 
-            setGarbageCountdown(10);
-        }, 10000);
+            setGarbageCountdown(30);
+        }, 30000);
 
         return () => {
             clearInterval(countdownInterval);
