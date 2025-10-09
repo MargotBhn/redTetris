@@ -55,19 +55,6 @@ export function handlePlayerConnection(
         socket.emit('joinedSuccess', newPlayer.isLeader)
         sendListPlayers(game, io)
 
-        // Émettre immédiatement l'état courant de la file des pièces (regroupée par sacs de 7)
-        {
-            const queue = Array.isArray((game as any).pieceQueue)
-                ? ((game as any).pieceQueue as string[])
-                : [];
-
-            const bags: string[][] = [];
-            for (let i = 0; i < queue.length; i += 7) {
-                bags.push(queue.slice(i, i + 7));
-            }
-
-            socket.emit('pieces:queue', { bags, total: queue.length });
-        }
     })
 
     ///////// PLAYER DISCONNECTION ///////////

@@ -3,10 +3,8 @@ import {useEffect, useState} from "react";
 import WaitingRoom from "./WaitingRoom.tsx";
 import bgSimple from "../assets/BackgroundSimple.png"
 import {socketMiddleware} from "../middleware/socketMiddleware.ts";
-import type {ServerPieceType} from "../middleware/socketMiddleware.ts"
 import TetrisGame from "./TetrisGame.tsx";
 
-// import WaitingRoom from "./WaitingRoom.tsx";
 
 type StatusState = "Error" | "Waiting" | "Game" | "EndGame" | "RoomBusy";
 
@@ -94,11 +92,6 @@ export default function GameLobby() {
             setStatus('Game')
         })
 
-        socketMiddleware.onPieceBag((bag: ServerPieceType[]) => {
-                console.log(bag)
-            }
-        )
-
 
     }, [socketId, room]);
 
@@ -140,7 +133,7 @@ export default function GameLobby() {
         )
     } else if (status === "Game") {
         return (
-            <TetrisGame/>
+            <TetrisGame room={room}/>
         )
     } else {
         return (<>Status empty</>)

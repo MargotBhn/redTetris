@@ -18,7 +18,7 @@ import {io, Socket} from "socket.io-client";
  * Types des pièces renvoyées par le serveur
  * (DTO minimal pour la génération côté serveur)
  */
-export type ServerPieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
+export type PieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
 
 
 /**
@@ -60,54 +60,6 @@ const createMiddleware = () => {
             socket.emit(message, ...args)
         },
 
-        /**
-         * Endpoints de génération des pièces
-         * Alignés avec les événements serveur :
-         * - 'pieces' (requête + réponse sur le même événement)
-         * - 'pieces:queue' (peek non-destructif, groupé par sacs de 7)
-         */
-
-        // // Demande au serveur N types de pièces (par défaut 7) pour une room
-        // requestPieces: (room: string, count: number = 7) => {
-        //     if (!socket) return
-        //     socket.emit('pieces', room, count)
-        // },
-        //
-        // // Écoute la réponse 'pieces' contenant un tableau de types
-        // onPieces: (callback: (types: ServerPieceType[]) => void) => {
-        //     if (!socket) return
-        //     socket.on('pieces', callback)
-        // },
-        //
-        // // Arrête d'écouter la réponse 'pieces'
-        // offPieces: (callback: (types: ServerPieceType[]) => void) => {
-        //     if (!socket) return
-        //     socket.off('pieces', callback)
-        // },
-
-
-        /**
-         * Endpoints dédiés à la génération des pièces
-         */
-
-        // // Demande la prochaine pièce pour une room
-        // requestNextPiece: (room: string) => {
-        //     if (!socket) return
-        //     socket.emit('requestNextPiece', room)
-        // },
-        //
-        // // Écoute la prochaine pièce fournie par le serveur
-        // onNextPiece: (callback: (piece: ServerPiece) => void) => {
-        //     if (!socket) return
-        //     socket.on('nextPiece', callback)
-        // },
-        //
-        // // Stoppe l'écoute de la prochaine pièce
-        // offNextPiece: (callback: (piece: ServerPiece) => void) => {
-        //     if (!socket) return
-        //     socket.off('nextPiece', callback)
-        // },
-
         // Demande un sac de pièces (7 pieces)
         requestPieceBag: (room: string) => {
             if (!socket) return
@@ -115,7 +67,7 @@ const createMiddleware = () => {
         },
 
         // Écoute la réception d'un sac de pièces (1 tableau de 7 pieces)
-        onPieceBag: (callback: (bag: ServerPieceType[]) => void) => {
+        onPieceBag: (callback: (bag: PieceType[]) => void) => {
             if (!socket) return
             socket.on('pieceBag', callback)
         },
