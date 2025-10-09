@@ -389,7 +389,6 @@ export default function TetrisGame({room}: TetrisGameProps) {
 
         // get new bag
         if (pieceIndex % 7 >= 5 && pieceBagRef.current?.length <= pieceIndex + 3 && room) {
-            console.log('requesting new bag')
             socketMiddleware.requestPieceBag(room)
         }
     }, [pieceIndex]);
