@@ -5,7 +5,6 @@ import GameOver from "./GameOver.tsx";
 import bgSimple from "../assets/BackgroundSimple.png";
 import NextPiece from "./NextPiece.tsx";
 import {socketMiddleware} from "../middleware/socketMiddleware.ts";
-// import type {PieceType} from "../middleware/socketMiddleware.ts";
 
 
 // RULES
@@ -20,6 +19,7 @@ import {socketMiddleware} from "../middleware/socketMiddleware.ts";
 
 const GRID_HEIGHT = 20;
 const GRID_WIDTH = 10;
+const FALL_SPEED = 5000;
 
 type PieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
 
@@ -43,28 +43,6 @@ export interface Piece {
     color: string
 }
 
-// function getPieceBag(): Piece[] {
-//     let bag = []
-//     for (let i = 0; i < 7; i++) {
-//         bag.push(getRandomPiece());
-//     }
-//     return bag
-// }
-
-// function getRandomPiece(): Piece {
-//     const pieces: PieceType[] = ['I', 'O', 'T', 'S', 'Z', 'J', 'L']
-//     const randomPieceIndex = Math.floor(Math.random() * pieces.length);
-//     const type = pieces[randomPieceIndex]
-//     const spawnY = type == 'I' ? -1 : 0 // On remonte le I de 1, sinon il spawn trop bas
-//     return {
-//         type: type,
-//         position: {x: 3, y: spawnY},
-//         rotation: 0,
-//         matrix: tetrominos[type][0],
-//         color: getCellColor(type),
-//     }
-// }
-
 function createPiece(pieceType: PieceType) {
     const spawnY = pieceType == 'I' ? -1 : 0 // On remonte le I de 1, sinon il spawn trop bas
     return {
@@ -86,7 +64,7 @@ function getCellColor(value: string) {
         'Z': 'bg-red-500',
         'J': 'bg-blue-500',
         'L': 'bg-orange-500',
-        'B': 'bg-black-500', // Blocked
+        'B': 'bg-gray-700', // Blocked
     };
     return colors[value];
 }
@@ -198,7 +176,7 @@ function gameIsLost(grid: Cell[][], piece: Piece | null) {
     return false
 }
 
-function clearCompleteLines(grid: Cell[][]) {
+function clearCompleteLines(grid: Cell[][], room: string | undefined) {
     let linesCleared = 0;
     const newGrid = grid.filter((row) => {
         const isComplete = row.every(cell => cell.value !== 'E');
@@ -221,27 +199,55 @@ function clearCompleteLines(grid: Cell[][]) {
             }))
         );
     }
-
+    // if (linesCleared > 1 && room) {
+    //     socketMiddleware.sendGarbageLines(linesCleared - 1, room);
+    // }
+    if (linesCleared > 0 && room) {
+        socketMiddleware.sendGarbageLines(linesCleared, room);
+    }
     return {newGrid, linesCleared};
 }
 
-function addGarbageLine(grid: Cell[][], activePiece: Piece | null): { newGrid: Cell[][], newPiece: Piece | null } {
+function addGarbageLine(grid: Cell[][], activePiece: Piece | null, numberLines: number): {
+    newGrid: Cell[][],
+    newPiece: Piece | null,
+    playerLost: boolean,
+} {
+    let playerLost = false;
+
+    // Check if there's no piece on the top lines that will be removed. If so, set GameLost
+    for (let y = 0; y < numberLines; y++) {
+        for (let x = 0; x < GRID_WIDTH; x++) {
+            if (grid[y][x].value !== 'E')
+                playerLost = true
+        }
+    }
+
     // Copie de la grille
-    const newGrid = grid.slice(1); // supprime la première ligne
+    const newGrid = grid.slice(numberLines); // supprime les lignes
 
-    // Création de la ligne bloquée
-    const blockedRow = Array(GRID_WIDTH).fill(0).map(() => ({
-        value: 'B',
-        color: getCellColor('B'),
-        locked: true,
-        blocked: true,
-    }));
-    newGrid.push(blockedRow);
 
-    // On remonte la pièce active d'une ligne si elle existe
-    let newPiece = activePiece ? { ...activePiece, position: { ...activePiece.position, y: Math.max(0, activePiece.position.y - 1) } } : null;
+    // Création des lignes bloquées
+    for (let i = 0; i < numberLines; i++) {
+        const blockedRow = Array(GRID_WIDTH).fill(0).map(() => ({
+            value: 'B',
+            color: getCellColor('B'),
+            locked: true,
+            blocked: true,
+        }));
+        newGrid.push(blockedRow);
+    }
 
-    return { newGrid, newPiece };
+
+    // On remonte la pièce active
+    let newPiece = activePiece ? {
+        ...activePiece,
+        position: {...activePiece.position, y: Math.max(0, activePiece.position.y - numberLines)}
+    } : null;
+    if (newPiece?.position.y && newPiece?.position.y < 0) {
+        playerLost = true;
+    }
+    return {newGrid, newPiece, playerLost};
 }
 
 interface TetrisGameProps {
@@ -264,7 +270,6 @@ export default function TetrisGame({room}: TetrisGameProps) {
     const currentPieceRef = useRef<Piece | null>(null);
     const [toggleTimer, setToggleTimer] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const [garbageCountdown, setGarbageCountdown] = useState<number>(10);
 
     const lastInputTimeRef = useRef(0);
     const fixedGridRef = useRef<Cell[][]>([]);
@@ -295,7 +300,7 @@ export default function TetrisGame({room}: TetrisGameProps) {
             setCurrentPiece(newPiece)
         } else {
             const gridWithPiece = fixPieceIntoGrid(currentPieceRef.current, fixedGridRef.current)
-            const {newGrid, linesCleared} = clearCompleteLines(gridWithPiece)
+            const {newGrid, linesCleared} = clearCompleteLines(gridWithPiece, room)
 
             setFixedGrid(newGrid)
             if (linesCleared > 0) {
@@ -352,7 +357,7 @@ export default function TetrisGame({room}: TetrisGameProps) {
                     newPiece = forcePieceDown(fixedGridRef.current, newPiece)
 
                     const gridWithPiece = fixPieceIntoGrid(newPiece, fixedGridRef.current);
-                    const {newGrid, linesCleared} = clearCompleteLines(gridWithPiece);
+                    const {newGrid, linesCleared} = clearCompleteLines(gridWithPiece, room);
 
                     setFixedGrid(newGrid);
                     if (linesCleared > 0) {
@@ -392,7 +397,8 @@ export default function TetrisGame({room}: TetrisGameProps) {
         timerRef.current = setInterval(() => {
             if (currentPieceRef.current)
                 fall(copyPiece(currentPieceRef.current));
-        }, 1000);
+        }, FALL_SPEED);
+
         return () => {
             if (timerRef.current) {
                 clearInterval(timerRef.current);
@@ -408,7 +414,6 @@ export default function TetrisGame({room}: TetrisGameProps) {
 
         socketMiddleware.onPieceBag((bag: PieceType[]) => {
             const newBag: Piece[] = bag.map((piece: PieceType) => createPiece(piece))
-            // console.log('new bag received', newBag)
             pieceBagRef.current = [...pieceBagRef.current, ...newBag]
             if (pieceIndexRef.current < 0) {
                 setPieceIndex(0)
@@ -419,6 +424,20 @@ export default function TetrisGame({room}: TetrisGameProps) {
         })
         if (room)
             socketMiddleware.requestPieceBag(room)
+
+        socketMiddleware.onGarbageLines((numberLines: number) => {
+            isGarbageUpdateRef.current = true;
+            const {
+                newGrid,
+                newPiece,
+                playerLost
+            } = addGarbageLine(fixedGridRef.current, currentPieceRef.current, numberLines);
+            currentPieceRef.current = newPiece
+            setFixedGrid(newGrid);
+            // setCurrentPiece(newPiece)
+            if (playerLost)
+                setGameLost(playerLost)
+        })
 
         return () => {
             document.removeEventListener('keydown', handleKeyDown)
@@ -445,37 +464,6 @@ export default function TetrisGame({room}: TetrisGameProps) {
         }
     }, [currentPiece]);
 
-    useEffect(() => {
-        if (gameLost) return;
-
-        const countdownInterval = setInterval(() => {
-            setGarbageCountdown(prev => prev <= 1 ? 10 : prev - 1);
-        }, 1000);
-
-        const garbageInterval = setInterval(() => {
-            isGarbageUpdateRef.current = true; // Marquer que c'est une garbage line
-
-            setFixedGrid(prevGrid => {
-                const { newGrid, newPiece } = addGarbageLine(prevGrid, currentPieceRef.current);
-
-                // On met à jour la pièce active directement
-                if (newPiece) {
-                    currentPieceRef.current = newPiece;
-                    setCurrentPiece(newPiece);
-                }
-
-                return newGrid;
-            });
-
-            setGarbageCountdown(10);
-        }, 10000);
-
-        return () => {
-            clearInterval(countdownInterval);
-            clearInterval(garbageInterval);
-        };
-    }, [gameLost]);
-
     return (
 
         <div
@@ -487,9 +475,6 @@ export default function TetrisGame({room}: TetrisGameProps) {
             <div className="flex flex-col items-center justify-center h-screen">
                 {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
                 <div className="text-white text-2xl mb-4">Score: {score}</div>
-                <div className="text-red-400 text-lg mb-2">
-                    Garbage line dans {garbageCountdown}s
-                </div>
                 <div className="flex">
                     <div className="text-white">Mettre les autres players ici</div>
                     <Board grid={grid}/>

@@ -77,5 +77,16 @@ export function handleGame(
         socket.emit("pieceBag", pieceBag);
     })
 
+    socket.on('addGarbageLines', (numberLines: number, room: string) => {
+            const game = games.get(room);
+            if (!game) return
+            for (const player of game.players) {
+                if (player.socketId !== socket.id) {
+                    io.to(player.socketId).emit("garbageLines", numberLines)
+                }
+            }
+        }
+    )
+
 }
 
