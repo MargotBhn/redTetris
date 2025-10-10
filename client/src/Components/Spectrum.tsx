@@ -1,6 +1,6 @@
 interface SpectrumProps {
-    playerName: string;
-    heights: number[];
+    playerName: string,
+    heights: number[],
 }
 
 export default function Spectrum({playerName, heights}: SpectrumProps) {
@@ -13,7 +13,7 @@ export default function Spectrum({playerName, heights}: SpectrumProps) {
             <div className="flex gap-px bg-gray-800 p-1 rounded">
                 {heights.map((height, col) => (
                     <div key={col} className="flex flex-col-reverse gap-px">
-                        {Array.from({ length: maxHeight }).map((_, row) => (
+                        {Array.from({length: maxHeight}).map((_, row) => (
                             <div
                                 key={row}
                                 className={`${cellSize} ${

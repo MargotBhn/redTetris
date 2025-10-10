@@ -255,7 +255,7 @@ function calculateSpectrum(grid: Cell[][]): number[] {
 
     for (let col = 0; col < GRID_WIDTH; col++) {
         for (let row = 0; row < GRID_HEIGHT; row++) {
-            if (grid[row][col].value !== 'E') {
+            if (grid[row][col].value !== 'E' && grid[row][col].locked) {
                 // La hauteur est calculée depuis le bas
                 heights[col] = GRID_HEIGHT - row;
                 break; // On a trouvé le bloc le plus haut de cette colonne
@@ -543,7 +543,6 @@ export default function TetrisGame({room}: TetrisGameProps) {
                     <div className="flex flex-col gap-2">
                         {opponentsSpectrums.map(spectrum => (
                             <Spectrum
-                                key={spectrum.socketId}
                                 playerName={spectrum.username}
                                 heights={spectrum.spectrum}
                             />
