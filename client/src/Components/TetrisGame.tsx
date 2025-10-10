@@ -5,7 +5,6 @@ import GameOver from "./GameOver.tsx";
 import bgSimple from "../assets/BackgroundSimple.png";
 import NextPiece from "./NextPiece.tsx";
 import {socketMiddleware} from "../middleware/socketMiddleware.ts";
-// import type {PieceType} from "../middleware/socketMiddleware.ts";
 
 
 // RULES
@@ -203,9 +202,6 @@ function clearCompleteLines(grid: Cell[][], room: string | undefined) {
     if (linesCleared > 1 && room) {
         socketMiddleware.sendGarbageLines(linesCleared - 1, room);
     }
-    // if (linesCleared > 0 && room) {
-    //     socketMiddleware.sendGarbageLines(linesCleared, room);
-    // }
     return {newGrid, linesCleared};
 }
 
@@ -426,7 +422,6 @@ export default function TetrisGame({room}: TetrisGameProps) {
 
         socketMiddleware.onPieceBag((bag: PieceType[]) => {
             const newBag: Piece[] = bag.map((piece: PieceType) => createPiece(piece))
-            // console.log('new bag received', newBag)
             pieceBagRef.current = [...pieceBagRef.current, ...newBag]
             if (pieceIndexRef.current < 0) {
                 setPieceIndex(0)
@@ -447,7 +442,6 @@ export default function TetrisGame({room}: TetrisGameProps) {
             } = addGarbageLine(fixedGridRef.current, currentPieceRef.current, numberLines);
             currentPieceRef.current = newPiece
             setFixedGrid(newGrid);
-            // setCurrentPiece(newPiece)
             if (playerLost)
                 setGameLost(playerLost)
         })
