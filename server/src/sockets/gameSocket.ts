@@ -77,5 +77,26 @@ export function handleGame(
         socket.emit("pieceBag", pieceBag);
     })
 
+    socket.on('spectrum', (data: { socketId: string, spectrum: number[] }) => {
+        let gameRoom: Game | undefined;
+        for (const [roomName, game] of games.entries()) {
+            if (game.players.some(p => p.socketId === socket.id)) {
+                gameRoom = game;
+                break;
+            }
+        }
+
+        if (!gameRoom) return;
+
+        const player = getPlayer(data.socketId, gameRoom);
+        if (!player) return;
+
+        player.spectrum = data.spectrum;
+
+        // Envoie UNIQUEMENT au joueur qui a émis, pas à toute la room
+        const allSpectrums = gameRoom.getAllSpectrums(socket.id);
+        socket.emit('spectrum', allSpectrums);
+    });
+
 }
 

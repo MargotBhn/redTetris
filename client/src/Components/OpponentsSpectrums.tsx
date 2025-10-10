@@ -12,7 +12,7 @@ export default function OpponentsSpectrums({opponents}: { opponents: spectrum[] 
         <div className="flex gap-4">
             {opponents.map((op) => (
                 <div key={op.socketId} className="bg-gray-900/50 rounded p-2">
-                    <div className="text-xs text-white text-center mb-2">{op.name}</div>
+                    <div className="text-xs text-white text-center mb-2">{op.username}</div>
                     <div className="flex items-end gap-1 h-40">
                         {op.spectrum.map((h: number, idx: number) => (
                             <div
