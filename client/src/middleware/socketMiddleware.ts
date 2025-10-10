@@ -72,6 +72,21 @@ const createMiddleware = () => {
             socket.on('pieceBag', callback)
         },
 
+        sendGarbageLines: (numberLines: number, room: string) => {
+            if (!socket) return
+            socket.emit('addGarbageLines', numberLines, room)
+        },
+
+        onGarbageLines: (callback: (numberLines: number) => void) => {
+            if (!socket) return
+            socket.on('garbageLines', callback)
+        },
+
+        sendPlayerLost: () => {
+            if (!socket) return
+            socket.emit('sendPlayerLost')
+        },
+
         // Le serveur envoie le spectrum de tous les joueurs
         onSpectrum: (callback: (spectrum: spectrum[]) => void) => {
             if (!socket) return
