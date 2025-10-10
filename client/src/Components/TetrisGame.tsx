@@ -540,7 +540,13 @@ export default function TetrisGame({room}: TetrisGameProps) {
                     Garbage line dans {garbageCountdown}s
                 </div>
                 <div className="flex">
-                    <div className="flex flex-col gap-2">
+                    {/* Grille de spectrums avec alignement à droite */}
+                    <div
+                        className="grid gap-2 mr-4 content-start max-h-screen overflow-y-auto"
+                        style={{
+                            gridTemplateColumns: `repeat(${Math.min(opponentsSpectrums.length, 5)}, minmax(80px, auto))`,
+                        }}
+                    >
                         {opponentsSpectrums.map(spectrum => (
                             <Spectrum
                                 playerName={spectrum.username}
@@ -548,12 +554,11 @@ export default function TetrisGame({room}: TetrisGameProps) {
                             />
                         ))}
                     </div>
-                    <Board grid={grid}/>
-                    <div className="flex flex-col">
-                        {/*<div className="flex justify-center">*/}
-                        <NextPiece piece={nextPiece}/>
-                        {/*</div>*/}
 
+                    <Board grid={grid}/>
+
+                    <div className="flex flex-col">
+                        <NextPiece piece={nextPiece}/>
                     </div>
                 </div>
             </div>
