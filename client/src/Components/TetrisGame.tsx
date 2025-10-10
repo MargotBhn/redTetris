@@ -494,6 +494,22 @@ export default function TetrisGame({room}: TetrisGameProps) {
         }
     }, [currentPiece]);
 
+
+    useEffect(() => {
+        if (!room || gameLost) return;
+
+        const spectrumInterval = setInterval(() => {
+            const mySpectrum = calculateSpectrum(grid);
+            const socketId = socketMiddleware.getId();
+            if (socketId) {
+                socketMiddleware.emitSpectrum(mySpectrum, socketId);
+            }
+        }, 100);
+
+        return () => clearInterval(spectrumInterval);
+    }, [grid, room, gameLost]);
+
+
     return (
 
         <div
