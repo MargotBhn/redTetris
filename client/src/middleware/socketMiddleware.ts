@@ -26,7 +26,7 @@ export type PieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
  */
 export interface spectrum {
     socketId: string;
-    name: string;
+    username: string;
     spectrum: number[];
 }
 
@@ -88,15 +88,18 @@ const createMiddleware = () => {
         },
 
         // Le serveur envoie le spectrum de tous les joueurs
-        onSpectrum: (callback: (spectrum: spectrum[]) => void) => {
-            if (!socket) return
-            socket.on('spectrum', callback)
+        onSpectrum(callback: (spectrums: spectrum[]) => void) {
+            if (!socket) return;
+            socket.on('spectrum', callback);
         },
 
-        //Le joueur envoie sont spetrum a chaque qu'il pose une piece
-        emitSpectrum: (spectrum: spectrum, socketId: string) => {
-            if (!socket) return
-            socket.emit('spectrum', spectrum, socketId)
+        // Le joueur envoie son spectrum
+        emitSpectrum(spectrumData: number[], socketId: string) {
+            if (!socket) return;
+            socket.emit('spectrum', {
+                socketId: socketId,
+                spectrum: spectrumData
+            });
         },
 
         // le joueur emet pour dire qu'il a perdu la game

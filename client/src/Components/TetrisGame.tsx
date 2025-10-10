@@ -4,7 +4,8 @@ import Board from "./Board.tsx";
 import GameOver from "./GameOver.tsx";
 import bgSimple from "../assets/BackgroundSimple.png";
 import NextPiece from "./NextPiece.tsx";
-import {socketMiddleware} from "../middleware/socketMiddleware.ts";
+import {socketMiddleware, type spectrum} from "../middleware/socketMiddleware.ts";
+import Spectrum from "./Spectrum.tsx";
 
 
 // RULES
@@ -251,6 +252,22 @@ interface TetrisGameProps {
     room: string | undefined
 }
 
+function calculateSpectrum(grid: Cell[][]): number[] {
+    const heights: number[] = Array(GRID_WIDTH).fill(0);
+
+    for (let col = 0; col < GRID_WIDTH; col++) {
+        for (let row = 0; row < GRID_HEIGHT; row++) {
+            if (grid[row][col].value !== 'E' && grid[row][col].locked) {
+                // La hauteur est calculée depuis le bas
+                heights[col] = GRID_HEIGHT - row;
+                break; // On a trouvé le bloc le plus haut de cette colonne
+            }
+        }
+    }
+
+    return heights;
+}
+
 export default function TetrisGame({room}: TetrisGameProps) {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
@@ -272,6 +289,7 @@ export default function TetrisGame({room}: TetrisGameProps) {
     const fixedGridRef = useRef<Cell[][]>([]);
     const INPUT_DELAY = 100;
 
+    const [opponentsSpectrums, setOpponentsSpectrums] = useState<spectrum[]>([]);
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
     // On utilise une ref pour savoir si le changement vient d'une garbage line
@@ -430,6 +448,11 @@ export default function TetrisGame({room}: TetrisGameProps) {
 
             }
         })
+
+        socketMiddleware.onSpectrum((spectrums: spectrum[]) => {
+            setOpponentsSpectrums(spectrums);
+        })
+
         if (room)
             socketMiddleware.requestPieceBag(room)
 
@@ -483,13 +506,25 @@ export default function TetrisGame({room}: TetrisGameProps) {
                 {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
                 <div className="text-white text-2xl mb-4">Score: {score}</div>
                 <div className="flex">
-                    <div className="text-white">Mettre les autres players ici</div>
-                    <Board grid={grid}/>
-                    <div className="flex flex-col">
-                        {/*<div className="flex justify-center">*/}
-                        <NextPiece piece={nextPiece}/>
-                        {/*</div>*/}
+                    {/* Grille de spectrums avec alignement à droite */}
+                    <div
+                        className="grid gap-2 mr-4 content-start max-h-screen overflow-y-auto"
+                        style={{
+                            gridTemplateColumns: `repeat(${Math.min(opponentsSpectrums.length, 5)}, minmax(80px, auto))`,
+                        }}
+                    >
+                        {opponentsSpectrums.map(spectrum => (
+                            <Spectrum
+                                playerName={spectrum.username}
+                                heights={spectrum.spectrum}
+                            />
+                        ))}
+                    </div>
 
+                    <Board grid={grid}/>
+
+                    <div className="flex flex-col">
+                        <NextPiece piece={nextPiece}/>
                     </div>
                 </div>
             </div>

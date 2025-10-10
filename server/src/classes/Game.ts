@@ -81,6 +81,16 @@ class Game {
         return this.pieceQueue[index];
     }
 
+    getAllSpectrums(excludeSocketId?: string) {
+        return this.players
+            .filter(p => p.socketId !== excludeSocketId)
+            .map(p => ({
+                socketId: p.socketId,
+                username: p.name,
+                spectrum: p.spectrum
+            }));
+    }
+
     // // Ensure the shared queue has at least `n` items available
     // ensureTypes(n: number) {
     //     while (this.pieceQueue.length < n) {

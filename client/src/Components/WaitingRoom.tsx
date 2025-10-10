@@ -21,7 +21,7 @@ export default function WaitingRoom({leader, listPlayers, startGame}: WaitingRoo
             className="fixed top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat overflow-hidden"
             style={{backgroundImage: `url(${bgTetris})`}}
         >
-            <div className="absolute top-[20%] left-1/2 -translate-x-1/2 text-center text-white z-10"
+            <div className="absolute top-[20%] left-1/2 -translate-x-1/2 text-center text-white z-10 overflow-y-auto max-h-[80%]"
                  style={{textShadow: "0 2px 8px rgba(0,0,0,0.6)"}}
             >
                 <div className="p-8 border-4 border-yellow-400 rounded-xl"
