@@ -48,56 +48,54 @@ export default function GameLobby() {
         // Connect to socket via middleware
         if (!socketMiddleware.isConnected()) {
             socketMiddleware.connect()
-            socketMiddleware.on('connect', () => {
+            socketMiddleware.onConnect(() => {
                 setSocketId(socketMiddleware.getId())
-                if (room && login) {
-                    socketMiddleware.emit('joinRoom', room, login, socketMiddleware.getId())
+                if (room && login){
+                    socketMiddleware.emitJoinRoom(room, login)
                 }
             })
+
         } else {
-            setSocketId(socketMiddleware.getId())
             if (room && login) {
-                socketMiddleware.emit('joinRoom', room, login, socketMiddleware.getId())
+                socketMiddleware.emitJoinRoom(room, login)
             }
         }
     }, [room, login]);
 
     useEffect(() => {
-        // Setup all socket event listeners via middleware
-        socketMiddleware.on('joinError', () => {
+        socketMiddleware.onJoinError(() => {
             setErrorMessage("This room is not available. A game is already in progress.")
             setStatus("RoomBusy")
         })
-
-        socketMiddleware.on('joinedSuccess', (isLeaderGame: boolean) => {
+        socketMiddleware.onJoinSuccess((isLeader: boolean) => {
             setErrorMessage(null)
-            setIsLeader(isLeaderGame)
+            setIsLeader(isLeader)
             setStatus("Waiting")
-            // Demande explicite de la file des pièces (2 sacs déjà générés côté serveur)
-            if (room) {
-                socketMiddleware.emit('pieces:queue', room)
-            }
-        });
+        })
 
-        socketMiddleware.on('newLeader', (socketIdLeader: string) => {
+        socketMiddleware.onNewLeader((socketIdLeader:string) =>{
             if (socketId === socketIdLeader)
                 setIsLeader(true)
         })
 
-        socketMiddleware.on('updatePlayersList', (players: PlayerName[]) => {
+        socketMiddleware.onUpdatePlayerList((players:PlayerName[]) =>{
             setListPlayers(players)
         })
 
-        socketMiddleware.on('gameStarts', () => {
+        socketMiddleware.onGameStarts(() => {
             setStatus('Game')
+        })
+
+        socketMiddleware.onReturnLobby(() => {
+            setStatus('Waiting')
         })
 
 
     }, [socketId, room]);
 
     const startGame = () => {
-        if (socketMiddleware.isConnected()) {
-            socketMiddleware.emit('startGame', room);
+        if (socketMiddleware.isConnected() && room) {
+            socketMiddleware.emitStartGame(room)
         }
     }
 
@@ -133,7 +131,7 @@ export default function GameLobby() {
         )
     } else if (status === "Game") {
         return (
-            <TetrisGame room={room}/>
+            <TetrisGame room={room} isLeader={isLeader}/>
         )
     } else {
         return (<>Status empty</>)

@@ -6,6 +6,7 @@ import bgSimple from "../assets/BackgroundSimple.png";
 import NextPiece from "./NextPiece.tsx";
 import {socketMiddleware, type spectrum} from "../middleware/socketMiddleware.ts";
 import Spectrum from "./Spectrum.tsx";
+import EndGame from "./EndGame.tsx";
 
 
 // RULES
@@ -146,7 +147,7 @@ function fixPieceIntoGrid(piece: Piece | null, grid: Cell[][]) {
 }
 
 function forcePieceDown(grid: Cell[][], piece: Piece): Piece {
-    let newPiece = copyPiece(piece);
+   const newPiece = copyPiece(piece);
 
     // On descend la pièce ligne par ligne jusqu'à ce qu'elle ne puisse plus descendre
     while (true) {
@@ -238,7 +239,7 @@ function addGarbageLine(grid: Cell[][], activePiece: Piece | null, numberLines: 
 
 
     // On remonte la pièce active
-    let newPiece = activePiece ? {
+    const newPiece = activePiece ? {
         ...activePiece,
         position: {...activePiece.position, y: Math.max(0, activePiece.position.y - numberLines)}
     } : null;
@@ -249,7 +250,8 @@ function addGarbageLine(grid: Cell[][], activePiece: Piece | null, numberLines: 
 }
 
 interface TetrisGameProps {
-    room: string | undefined
+    room: string | undefined,
+    isLeader : boolean,
 }
 
 function calculateSpectrum(grid: Cell[][]): number[] {
@@ -268,7 +270,7 @@ function calculateSpectrum(grid: Cell[][]): number[] {
     return heights;
 }
 
-export default function TetrisGame({room}: TetrisGameProps) {
+export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
 
@@ -290,6 +292,9 @@ export default function TetrisGame({room}: TetrisGameProps) {
     const INPUT_DELAY = 100;
 
     const [opponentsSpectrums, setOpponentsSpectrums] = useState<spectrum[]>([]);
+
+    const [endOfGame, setEndOfGame] = useState<boolean>(false);
+
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
     // On utilise une ref pour savoir si le changement vient d'une garbage line
@@ -469,6 +474,10 @@ export default function TetrisGame({room}: TetrisGameProps) {
                 setGameLost(playerLost)
         })
 
+        socketMiddleware.onEndOfGame(() => {
+            setEndOfGame(true)
+        })
+
         return () => {
             document.removeEventListener('keydown', handleKeyDown)
             document.removeEventListener('keyup', handleKeyUp)
@@ -476,7 +485,8 @@ export default function TetrisGame({room}: TetrisGameProps) {
     }, []);
 
     useEffect(() => {
-        if (gameLost) {
+        if (gameLost && room) {
+            socketMiddleware.emitPlayerLost(room)
             document.removeEventListener('keydown', handleKeyDown)
             document.removeEventListener('keyup', handleKeyUp)
             if (timerRef.current) {
@@ -516,9 +526,11 @@ export default function TetrisGame({room}: TetrisGameProps) {
             className="fixed top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat overflow-hidden"
             style={{backgroundImage: `url(${bgSimple})`}}
         >
-            <span>{pieceIndex}</span>
+
+
 
             <div className="flex flex-col items-center justify-center h-screen">
+                <div>{endOfGame && isLeader && room && <EndGame room={room}/>}</div>
                 {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
                 <div className="text-white text-2xl mb-4">Score: {score}</div>
                 <div className="flex">

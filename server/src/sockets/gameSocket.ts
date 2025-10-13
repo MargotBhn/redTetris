@@ -40,6 +40,16 @@ export function updateNewLeader(io: Server, game: Game, socketId: string) {
 //     return out;
 // }
 
+// Return true is no player alive left
+function isEndOfGame(game: Game) {
+    for (const player of game.players) {
+        if (player.isAlive)
+            return false
+    }
+    return true
+}
+
+
 function getPlayer(socketId: string, game: Game): Player | null {
     for (const thisPlayer of game.players) {
         if (thisPlayer.socketId === socketId) {
@@ -49,15 +59,24 @@ function getPlayer(socketId: string, game: Game): Player | null {
     return null;
 }
 
+function resetGame(game: Game) {
+    game.pieceQueue = []
+    game.pushNewBagToQueue()
+    for (const player of game.players) {
+        player.isAlive = true;
+        player.spectrum = Array(10).fill(0)
+        player.bagIndex = 0
+    }
+    game.started = false
+}
+
 export function handleGame(
     socket: Socket,
     games: Map<string, Game>,
     io: Server) {
     socket.on('startGame', (room: string) => {
         const game = games.get(room);
-        // console.log("handles game = ", game);
         if (game) {
-            // game.pushNewBagToQueue()
             game.started = true;
             const pieceBag = game.getPieceBag(0)
             io.to(room).emit("pieceBag", pieceBag)
@@ -108,6 +127,27 @@ export function handleGame(
         const allSpectrums = gameRoom.getAllSpectrums(socket.id);
         socket.emit('spectrum', allSpectrums);
     });
+
+    socket.on('playerLost', (room: string) => {
+        const game = games.get(room);
+        if (!game) return
+        const player = getPlayer(socket.id, game)
+        if (!player) return;
+        player.isAlive = false
+
+        if (isEndOfGame(game)){
+            io.to(room).emit("endOfGame");
+
+        }
+    })
+
+    socket.on('requestReturnLobby', (room: string) => {
+        const game = games.get(room);
+
+        if (!game) return
+        resetGame(game);
+        io.to(room).emit("GoLobby")
+    })
 
 }
 

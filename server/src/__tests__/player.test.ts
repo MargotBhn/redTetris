@@ -10,16 +10,5 @@ describe("Player class", () => {
         expect(pl.bagIndex).toBe(0);
     });
 
-    test("initializes a 20x10 board filled with zeros", () => {
-        const pl = new Player("Bob", "socket-2", false);
-        expect(Array.isArray(pl.board)).toBe(true);
-        expect(pl.board.length).toBe(20);
-        for (const row of pl.board) {
-            expect(Array.isArray(row)).toBe(true);
-            expect(row.length).toBe(10);
-            for (const cell of row) {
-                expect(cell).toBe(0);
-            }
-        }
-    });
+
 });

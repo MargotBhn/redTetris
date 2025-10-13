@@ -34,26 +34,22 @@ class Game {
 
     // Fisher-Yates shuffle for the bag
     private shuffleBag() {
-        // console.log('[Game] Shuffling bag (before):', [...this.pieceBag]);
         for (let i = this.pieceBag.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             const tmp = this.pieceBag[i]!;
             this.pieceBag[i] = this.pieceBag[j]!;
             this.pieceBag[j] = tmp;
         }
-        // console.log('[Game] Shuffling bag (after):', [...this.pieceBag]);
     }
 
     // Refill the bag with the 7 piece types and shuffle
     private refillBag() {
         this.pieceBag = [...Game.PIECE_TYPES];
-        // console.log('[Game] Refilled bag with PIECE_TYPES:', [...this.pieceBag]);
         this.shuffleBag();
     }
 
     // Push one shuffled bag of 7 types into the shared queue
     pushNewBagToQueue() {
-        // console.log('[Game] pushNewBagToQueue() called. Current pieceBag length:', this.pieceBag.length);
         if (this.pieceBag.length === 0) {
             this.refillBag();
         }
@@ -62,17 +58,8 @@ class Game {
             const type = this.pieceBag.pop()!
             newBag.push(type)
         }
-        // console.log('new bag', newBag);
         this.pieceQueue.push(newBag);
-        // const initialQueueLen = this.pieceQueue.length;
-        // const pushed: string[] = [];
-        // while (this.pieceBag.length > 0) {
-        //     const type = this.pieceBag.pop()!; // pop after shuffle => random order
-        //     pushed.push(type);
-        //     this.pieceQueue.push(type);
-        // }
-        // console.log('[Game] Pushed bag to queue:', pushed, 'Queue length delta:', this.pieceQueue.length - initialQueueLen, 'New queue length:', this.pieceQueue.length);
-    }
+     }
 
     getPieceBag(index: number) {
         if (index == this.pieceQueue.length - 1) {

@@ -10,7 +10,7 @@ export function handlePlayerConnection(
     games: Map<string, Game>,
     io: Server) {
 
-    socket.on('joinRoom', (room: string, login: string, socketId: string) => {
+    socket.on('joinRoom', (room: string, login: string) => {
         let game = games.get(room);
 
         if (game && game.started) {
@@ -26,13 +26,7 @@ export function handlePlayerConnection(
         }
 
         if (!game) {
-            // console.log(`[Game:create] Creating new Game for room="${room}"`);
             game = new Game(room);
-            // console.log(`[Game:create] pieceQueue initial length=${game.pieceQueue.length}`);
-            // console.log(`[Game:create] pieceQueue first two bags:`, {
-            //     bag1: game.pieceQueue.slice(0, 7),
-            //     bag2: game.pieceQueue.slice(7, 14),
-            // });
             games.set(room, game);
         }
 
@@ -41,14 +35,8 @@ export function handlePlayerConnection(
         if (game.players.length === 0) {
             isLeader = true
         }
-        const newPlayer: Player = new Player(login, socketId, isLeader)
+        const newPlayer: Player = new Player(login, socket.id, isLeader)
         game.players.push(newPlayer)
-        // console.log('[Game:state] room=', room, 'players=', game.players.length, 'started=', game.started);
-        // console.log('[Game:state] pieceQueue length=', game.pieceQueue.length);
-        // console.log('[Game:state] first two bags:', {
-        //     bag1: game.pieceQueue.slice(0, 7),
-        //     bag2: game.pieceQueue.slice(7, 14),
-        // });
 
         socket.join(room)
 

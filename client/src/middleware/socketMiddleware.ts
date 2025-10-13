@@ -13,6 +13,7 @@
  * ensuring complete separation of concerns and easier maintenance.
  */
 import {io, Socket} from "socket.io-client";
+import type {PlayerName} from "../Components/GameLobby.tsx";
 
 /**
  * Types des pièces renvoyées par le serveur
@@ -41,24 +42,47 @@ const createMiddleware = () => {
             socket = io("http://localhost:3000")
         },
 
-        on: (event: string, callback: any) => {
-            if (!socket) {
-                return
-            }
-            socket.on(event, callback)
-        },
-
-        // Free une ecoute
-        off: (event: string, callback: any) => {
-            if (socket) {
-                socket.off(event, callback);
-            }
-        },
-
-        emit: (message: string, ...args: any[]) => {
+        onConnect: (callback: () => void) => {
             if (!socket) return
-            socket.emit(message, ...args)
+            socket.on('connect', callback)
         },
+
+        emitJoinRoom: ((room:string, login:string) => {
+            if (!socket) return
+            socket.emit('joinRoom', room, login)
+        }),
+
+        onJoinError: (callback: () => void) => {
+            if (!socket) return
+            socket.on('joinError', callback)
+        },
+
+        onJoinSuccess: (callback: (isLeaderGame : boolean) => void) => {
+            if (!socket) return
+            socket.on('joinedSuccess', callback)
+        },
+
+        onNewLeader: (callback: (socketIdLeader : string) => void) => {
+            if (!socket) return
+            socket.on('newLeader', callback)
+        },
+
+        onUpdatePlayerList: (callback: (players:PlayerName[]) => void) => {
+            if (!socket) return
+            socket.on('updatePlayersList', callback)
+
+        },
+
+        onGameStarts:(callback:()=>void) =>{
+            if (!socket) return
+            socket.on('gameStarts', callback)
+        },
+
+        emitStartGame : ((room:string) => {
+            if (!socket) return
+            socket.emit('startGame', room)
+        }) ,
+
 
         // Demande un sac de pièces (7 pieces)
         requestPieceBag: (room: string) => {
@@ -82,11 +106,6 @@ const createMiddleware = () => {
             socket.on('garbageLines', callback)
         },
 
-        sendPlayerLost: () => {
-            if (!socket) return
-            socket.emit('sendPlayerLost')
-        },
-
         // Le serveur envoie le spectrum de tous les joueurs
         onSpectrum(callback: (spectrums: spectrum[]) => void) {
             if (!socket) return;
@@ -103,9 +122,26 @@ const createMiddleware = () => {
         },
 
         // le joueur emet pour dire qu'il a perdu la game
-        emitPlayerLost: (socketId: string) => {
+        emitPlayerLost: (room: string) => {
             if (!socket) return
-            socket.emit('playerLost', socketId)
+            socket.emit('playerLost', room)
+        },
+
+        onEndOfGame: (callback:() => void) => {
+            if (!socket) return
+            socket.on('endOfGame', callback)
+        },
+
+        // leader choose to end the game
+        emitReturnLobby:(room:string) =>{
+            if (!socket) return
+            socket.emit('requestReturnLobby', room)
+        },
+
+        // all players listen are redirected to the waiting room
+        onReturnLobby: (callback : () => void) => {
+            if (!socket) return
+            socket.on('GoLobby', callback)
         },
 
         // // Stoppe l'écoute du sac de pièces
