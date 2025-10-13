@@ -7,6 +7,7 @@ import NextPiece from "./NextPiece.tsx";
 import {socketMiddleware, type spectrum} from "../middleware/socketMiddleware.ts";
 import Spectrum from "./Spectrum.tsx";
 import EndGame from "./EndGame.tsx";
+import GameWon from "./GameWon.tsx";
 
 
 // RULES
@@ -294,6 +295,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     const [opponentsSpectrums, setOpponentsSpectrums] = useState<spectrum[]>([]);
 
     const [endOfGame, setEndOfGame] = useState<boolean>(false);
+    const[isWinner, setIsWinner] = useState<boolean>(false);
 
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
@@ -474,7 +476,10 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                 setGameLost(playerLost)
         })
 
-        socketMiddleware.onEndOfGame(() => {
+        socketMiddleware.onEndOfGame((winner:string) => {
+            if (winner === socketMiddleware.getId()){
+                setIsWinner(true)
+            }
             setEndOfGame(true)
         })
 
@@ -531,7 +536,11 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
 
             <div className="flex flex-col items-center justify-center h-screen">
                 <div>{endOfGame && isLeader && room && <EndGame room={room}/>}</div>
-                {gameLost ? <GameOver/> : <div className='invisible'><GameOver/></div>}
+                {gameLost ? (
+                    <GameOver />
+                ) : isWinner ? (
+                    <GameWon />
+                ) : null}
                 <div className="text-white text-2xl mb-4">Score: {score}</div>
                 <div className="flex">
                     {/* Grille de spectrums avec alignement à droite */}

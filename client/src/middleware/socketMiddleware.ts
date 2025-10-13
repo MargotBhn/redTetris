@@ -127,7 +127,7 @@ const createMiddleware = () => {
             socket.emit('playerLost', room)
         },
 
-        onEndOfGame: (callback:() => void) => {
+        onEndOfGame: (callback:(winner:string) => void) => {
             if (!socket) return
             socket.on('endOfGame', callback)
         },

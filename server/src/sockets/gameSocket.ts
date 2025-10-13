@@ -40,13 +40,31 @@ export function updateNewLeader(io: Server, game: Game, socketId: string) {
 //     return out;
 // }
 
-// Return true is no player alive left
-function isEndOfGame(game: Game) {
-    for (const player of game.players) {
-        if (player.isAlive)
-            return false
+function countAlivePlayers(players: Player[]) {
+    let count = 0
+    let lastSocketId = ""
+    for (const player of players) {
+        if (player.isAlive) {
+            count += 1;
+            lastSocketId = player.socketId
+        }
     }
-    return true
+    return {count, lastSocketId}
+}
+
+// Return if end of game and winner socket id if multiplayer
+function isEndOfGame(game: Game) : {endOfGame: boolean, winner:string | null} {
+    const {count, lastSocketId} = countAlivePlayers(game.players);
+
+    // if multiplayer, game ends when one player remains
+    if (count === 1 && game.isMultiplayer)
+        return {endOfGame: true, winner :lastSocketId}
+
+    // if solo player, game end when he looses
+    if (count === 0)
+        return {endOfGame: true, winner :null}
+
+    return {endOfGame: false, winner :null}
 }
 
 
@@ -57,6 +75,10 @@ function getPlayer(socketId: string, game: Game): Player | null {
         }
     }
     return null;
+}
+
+function isMultiplayer(game:Game){
+    return game.players.length !== 0;
 }
 
 function resetGame(game: Game) {
@@ -78,6 +100,7 @@ export function handleGame(
         const game = games.get(room);
         if (game) {
             game.started = true;
+            game.isMultiplayer = isMultiplayer(game)
             const pieceBag = game.getPieceBag(0)
             io.to(room).emit("pieceBag", pieceBag)
             io.to(room).emit("gameStarts");
@@ -135,10 +158,11 @@ export function handleGame(
         if (!player) return;
         player.isAlive = false
 
-        if (isEndOfGame(game)){
-            io.to(room).emit("endOfGame");
-
+        const {endOfGame, winner} = isEndOfGame(game)
+        if (endOfGame) {
+            io.to(room).emit("endOfGame", winner);
         }
+
     })
 
     socket.on('requestReturnLobby', (room: string) => {

@@ -7,6 +7,7 @@ class Game {
     pieceQueue: string[][];
     // hostId: string | null;
     started: boolean
+    isMultiplayer: boolean;
 
     // 7-bag internals
     private pieceBag: string[];
@@ -17,6 +18,7 @@ class Game {
         this.players = [];
         this.pieceQueue = [];
         this.started = false;
+        this.isMultiplayer = false;
 
         // initialize bag
         this.pieceBag = [];
