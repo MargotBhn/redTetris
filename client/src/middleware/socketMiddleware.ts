@@ -112,12 +112,27 @@ const createMiddleware = () => {
             socket.on('spectrum', callback);
         },
 
-        // Le joueur envoie son spectrum
+        // Le serveur envoie les mises à jour de spectrum
+        onSpectrumUpdate(callback: (spectrums: spectrum[]) => void) {
+            if (!socket) return;
+            socket.on('spectrumUpdate', callback);
+        },
+
+        // Le joueur envoie son spectrum complet
         emitSpectrum(spectrumData: number[], socketId: string) {
             if (!socket) return;
             socket.emit('spectrum', {
                 socketId: socketId,
                 spectrum: spectrumData
+            });
+        },
+
+        // Le joueur envoie les changements de son spectrum
+        emitSpectrumUpdate(spectrumChanges: number[], socketId: string) {
+            if (!socket) return;
+            socket.emit('spectrumUpdate', {
+                socketId: socketId,
+                changes: spectrumChanges
             });
         },
 

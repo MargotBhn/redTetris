@@ -271,6 +271,39 @@ function calculateSpectrum(grid: Cell[][]): number[] {
     return heights;
 }
 
+function calculateSpectrumChanges(currentSpectrum: number[], lastSpectrum: number[]): {hasChanges: boolean, changes?: number[]} {
+    const hasChanges = currentSpectrum.some((height, index) => height !== lastSpectrum[index]);
+    
+    if (!hasChanges) {
+        return { hasChanges: false };
+    }
+    
+    return { 
+        hasChanges: true, 
+        changes: currentSpectrum.map((height, index) => height !== lastSpectrum[index] ? height : -1) // -1 signifie pas de changement
+    };
+}
+
+// Fonction pour envoyer les changements de spectrum
+function sendSpectrumUpdate(
+    grid: Cell[][], 
+    lastSpectrumRef: React.MutableRefObject<number[]>, 
+    room: string | undefined
+) {
+    if (!room) return;
+    
+    const currentSpectrum = calculateSpectrum(grid);
+    const { hasChanges, changes } = calculateSpectrumChanges(currentSpectrum, lastSpectrumRef.current);
+    
+    if (hasChanges && changes) {
+        const socketId = socketMiddleware.getId();
+        if (socketId) {
+            socketMiddleware.emitSpectrumUpdate(changes, socketId);
+            lastSpectrumRef.current = currentSpectrum;
+        }
+    }
+}
+
 export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     const [fixedGrid, setFixedGrid] = useState<Cell[][]>(createEmptyGrid())
     const [grid, setGrid] = useState<Cell[][]>(createEmptyGrid());
@@ -297,6 +330,8 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     const [endOfGame, setEndOfGame] = useState<boolean>(false);
     const[isWinner, setIsWinner] = useState<boolean>(false);
 
+    // Ref pour stocker le dernier spectrum envoyé
+    const lastSpectrumRef = useRef<number[]>(Array(GRID_WIDTH).fill(0));
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
     // On utilise une ref pour savoir si le changement vient d'une garbage line
@@ -307,18 +342,9 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         // Ne pas incrémenter pieceIndex si c'est une garbage line
         if (!isGarbageUpdateRef.current) {
             setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
-            
-            // Envoyer le spectrum uniquement quand une pièce est fixée (pas pour les garbage lines)
-            if (room && !gameLost) {
-                const mySpectrum = calculateSpectrum(fixedGrid);
-                const socketId = socketMiddleware.getId();
-                if (socketId) {
-                    socketMiddleware.emitSpectrum(mySpectrum, socketId);
-                }
-            }
         }
         isGarbageUpdateRef.current = false;
-    }, [fixedGrid, room, gameLost])
+    }, [fixedGrid])
 
 
     useEffect(() => {
@@ -337,6 +363,9 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             if (linesCleared > 0) {
                 setScore(prevScore => prevScore + linesCleared)
             }
+            
+            // Envoyer le spectrum mis à jour quand une pièce est fixée
+            sendSpectrumUpdate(newGrid, lastSpectrumRef, room);
         }
     }
 
@@ -400,6 +429,9 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                     if (linesCleared > 0) {
                         setScore(prevScore => prevScore + linesCleared);
                     }
+
+                    // Envoyer le spectrum mis à jour quand une pièce est fixée avec espace
+                    sendSpectrumUpdate(newGrid, lastSpectrumRef, room);
 
                     // 3. On redémarre le timer APRÈS (avec un petit délai pour être sûr)
                     setTimeout(() => {
@@ -469,6 +501,10 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             setOpponentsSpectrums(spectrums);
         })
 
+        socketMiddleware.onSpectrumUpdate((spectrums: spectrum[]) => {
+            setOpponentsSpectrums(spectrums);
+        })
+
         if (room)
             socketMiddleware.requestPieceBag(room)
 
@@ -517,6 +553,20 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             setGrid(getNewGrid(fixedGrid, currentPiece))
         }
     }, [currentPiece]);
+
+
+    // Envoi initial du spectrum au début du jeu
+    useEffect(() => {
+        if (!room || gameLost) return;
+        
+        // Envoyer le spectrum initial
+        const initialSpectrum = calculateSpectrum(grid);
+        const socketId = socketMiddleware.getId();
+        if (socketId) {
+            socketMiddleware.emitSpectrum(initialSpectrum, socketId);
+            lastSpectrumRef.current = initialSpectrum;
+        }
+    }, [room]);
 
 
     return (

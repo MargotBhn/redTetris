@@ -151,6 +151,26 @@ export function handleGame(
         socket.emit('spectrum', allSpectrums);
     });
 
+    socket.on('spectrumUpdate', (data: { socketId: string, changes: number[] }) => {
+        let gameRoom: Game | undefined;
+        for (const [roomName, game] of games.entries()) {
+            if (game.players.some(p => p.socketId === socket.id)) {
+                gameRoom = game;
+                break;
+            }
+        }
+
+        if (!gameRoom) return;
+
+        // Mettre à jour le spectrum avec les changements
+        const success = gameRoom.updatePlayerSpectrum(data.socketId, data.changes);
+        if (!success) return;
+
+        // Envoie UNIQUEMENT au joueur qui a émis, pas à toute la room
+        const allSpectrums = gameRoom.getAllSpectrums(socket.id);
+        socket.emit('spectrumUpdate', allSpectrums);
+    });
+
     socket.on('playerLost', (room: string) => {
         const game = games.get(room);
         if (!game) return

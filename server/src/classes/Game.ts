@@ -80,6 +80,22 @@ class Game {
             }));
     }
 
+    updatePlayerSpectrum(socketId: string, spectrumChanges: number[]) {
+        const player = this.players.find(p => p.socketId === socketId);
+        if (!player) return false;
+
+        // Appliquer les changements au spectrum du joueur
+        // -1 signifie pas de changement, sinon c'est la nouvelle valeur
+        for (let i = 0; i < spectrumChanges.length && i < player.spectrum.length; i++) {
+            const changeValue = spectrumChanges[i];
+            if (changeValue !== undefined && changeValue !== -1) {
+                player.spectrum[i] = changeValue;
+            }
+        }
+
+        return true;
+    }
+
     // // Ensure the shared queue has at least `n` items available
     // ensureTypes(n: number) {
     //     while (this.pieceQueue.length < n) {
