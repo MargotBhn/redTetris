@@ -146,9 +146,9 @@ export function handleGame(
 
         player.spectrum = data.spectrum;
 
-        // Envoie UNIQUEMENT au joueur qui a émis, pas à toute la room
-        const allSpectrums = gameRoom.getAllSpectrums(socket.id);
-        socket.emit('spectrum', allSpectrums);
+        // Envoyer les spectrums mis à jour à TOUS les joueurs de la room
+        const allSpectrums = gameRoom.getAllSpectrums();
+        io.to(gameRoom.roomName).emit('spectrum', allSpectrums);
     });
 
     socket.on('spectrumUpdate', (data: { socketId: string, changes: number[] }) => {
@@ -166,9 +166,9 @@ export function handleGame(
         const success = gameRoom.updatePlayerSpectrum(data.socketId, data.changes);
         if (!success) return;
 
-        // Envoie UNIQUEMENT au joueur qui a émis, pas à toute la room
-        const allSpectrums = gameRoom.getAllSpectrums(socket.id);
-        socket.emit('spectrumUpdate', allSpectrums);
+        // Envoyer les spectrums mis à jour à TOUS les joueurs de la room
+        const allSpectrums = gameRoom.getAllSpectrums();
+        io.to(gameRoom.roomName).emit('spectrumUpdate', allSpectrums);
     });
 
     socket.on('playerLost', (room: string) => {
