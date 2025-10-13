@@ -307,9 +307,18 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         // Ne pas incrémenter pieceIndex si c'est une garbage line
         if (!isGarbageUpdateRef.current) {
             setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
+            
+            // Envoyer le spectrum uniquement quand une pièce est fixée (pas pour les garbage lines)
+            if (room && !gameLost) {
+                const mySpectrum = calculateSpectrum(fixedGrid);
+                const socketId = socketMiddleware.getId();
+                if (socketId) {
+                    socketMiddleware.emitSpectrum(mySpectrum, socketId);
+                }
+            }
         }
         isGarbageUpdateRef.current = false;
-    }, [fixedGrid])
+    }, [fixedGrid, room, gameLost])
 
 
     useEffect(() => {
@@ -508,21 +517,6 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             setGrid(getNewGrid(fixedGrid, currentPiece))
         }
     }, [currentPiece]);
-
-
-    useEffect(() => {
-        if (!room || gameLost) return;
-
-        const spectrumInterval = setInterval(() => {
-            const mySpectrum = calculateSpectrum(grid);
-            const socketId = socketMiddleware.getId();
-            if (socketId) {
-                socketMiddleware.emitSpectrum(mySpectrum, socketId);
-            }
-        }, 100);
-
-        return () => clearInterval(spectrumInterval);
-    }, [grid, room, gameLost]);
 
 
     return (
