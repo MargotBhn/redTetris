@@ -104,6 +104,10 @@ export function handleGame(
             const pieceBag = game.getPieceBag(0)
             io.to(room).emit("pieceBag", pieceBag)
             io.to(room).emit("gameStarts");
+            
+            // Envoyer les spectrums initiaux (vides) à tous les joueurs
+            const initialSpectrums = game.getAllSpectrums();
+            io.to(room).emit('spectrum', initialSpectrums);
         }
     });
 

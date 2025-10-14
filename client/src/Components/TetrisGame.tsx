@@ -345,9 +345,6 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     
     // Ref pour le throttling des updates de spectrum
     const lastSpectrumUpdateTimeRef = useRef<number>(0);
-    
-    // Ref pour l'intervalle de mise à jour en temps réel
-    const realtimeSpectrumIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
     // On utilise une ref pour savoir si le changement vient d'une garbage line
@@ -539,7 +536,19 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         })
 
         socketMiddleware.onSpectrumUpdate((spectrums: spectrum[]) => {
-            setOpponentsSpectrums(spectrums);
+            // Fusionner avec les spectrums existants pour éviter le clipping
+            setOpponentsSpectrums(prevSpectrums => {
+                const newSpectrums = [...prevSpectrums];
+                spectrums.forEach(updatedSpectrum => {
+                    const index = newSpectrums.findIndex(s => s.socketId === updatedSpectrum.socketId);
+                    if (index >= 0) {
+                        newSpectrums[index] = updatedSpectrum;
+                    } else {
+                        newSpectrums.push(updatedSpectrum);
+                    }
+                });
+                return newSpectrums;
+            });
         })
 
         if (room)
@@ -592,18 +601,8 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     }, [currentPiece]);
 
 
-    // Envoi initial du spectrum au début du jeu
-    useEffect(() => {
-        if (!room || gameLost || pieceIndexRef.current < 0) return;
-        
-        // Envoyer le spectrum initial seulement quand le jeu a vraiment commencé
-        const initialSpectrum = calculateSpectrum(fixedGrid);
-        const socketId = socketMiddleware.getId();
-        if (socketId) {
-            socketMiddleware.emitSpectrum(initialSpectrum, socketId);
-            lastSpectrumRef.current = initialSpectrum;
-        }
-    }, [room, fixedGrid]);
+    // Envoi initial du spectrum au début du jeu (géré par le serveur maintenant)
+    // useEffect supprimé car le serveur envoie les spectrums initiaux au démarrage
 
 
     return (
@@ -633,6 +632,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                     >
                         {opponentsSpectrums.map(spectrum => (
                             <Spectrum
+                                key={spectrum.socketId}
                                 playerName={spectrum.username}
                                 heights={spectrum.spectrum}
                             />
