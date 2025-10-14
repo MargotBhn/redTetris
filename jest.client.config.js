@@ -15,7 +15,19 @@ module.exports = {
   },
   setupFilesAfterEnv: ["<rootDir>/client/src/setupTests.ts"],
   moduleNameMapper: {
-    "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+    "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    "\\.(png|jpg|jpeg|gif|svg)$": "<rootDir>/client/src/__mocks__/fileMock.js"
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
+  transform: {
+    "^.+\\.tsx?$": ["ts-jest", {
+      tsconfig: {
+        jsx: "react-jsx",
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+        allowImportingTsExtensions: true,
+        moduleResolution: "bundler",
+      }
+    }]
+  }
 };

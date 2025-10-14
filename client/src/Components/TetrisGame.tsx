@@ -148,7 +148,7 @@ function fixPieceIntoGrid(piece: Piece | null, grid: Cell[][]) {
 }
 
 function forcePieceDown(grid: Cell[][], piece: Piece): Piece {
-   const newPiece = copyPiece(piece);
+    const newPiece = copyPiece(piece);
 
     // On descend la pièce ligne par ligne jusqu'à ce qu'elle ne puisse plus descendre
     while (true) {
@@ -252,7 +252,7 @@ function addGarbageLine(grid: Cell[][], activePiece: Piece | null, numberLines: 
 
 interface TetrisGameProps {
     room: string | undefined,
-    isLeader : boolean,
+    isLeader: boolean,
 }
 
 function calculateSpectrum(grid: Cell[][]): number[] {
@@ -295,7 +295,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     const [opponentsSpectrums, setOpponentsSpectrums] = useState<spectrum[]>([]);
 
     const [endOfGame, setEndOfGame] = useState<boolean>(false);
-    const[isWinner, setIsWinner] = useState<boolean>(false);
+    const [isWinner, setIsWinner] = useState<boolean>(false);
 
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
@@ -476,8 +476,8 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                 setGameLost(playerLost)
         })
 
-        socketMiddleware.onEndOfGame((winner:string) => {
-            if (winner === socketMiddleware.getId()){
+        socketMiddleware.onEndOfGame((winner: string) => {
+            if (winner === socketMiddleware.getId()) {
                 setIsWinner(true)
             }
             setEndOfGame(true)
@@ -533,13 +533,12 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         >
 
 
-
-            <div className="flex flex-col items-center justify-center h-screen">
+            <div data-testid="tetris-game" className="flex flex-col items-center justify-center h-screen">
                 <div>{endOfGame && isLeader && room && <EndGame room={room}/>}</div>
                 {gameLost ? (
-                    <GameOver />
+                    <GameOver/>
                 ) : isWinner ? (
-                    <GameWon />
+                    <GameWon/>
                 ) : null}
                 <div className="text-white text-2xl mb-4">Score: {score}</div>
                 <div className="flex">
