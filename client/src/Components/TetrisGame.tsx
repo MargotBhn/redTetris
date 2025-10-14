@@ -472,6 +472,9 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             } = addGarbageLine(fixedGridRef.current, currentPieceRef.current, numberLines);
             currentPieceRef.current = newPiece
             setFixedGrid(newGrid);
+            if (newPiece) {
+                setCurrentPiece(newPiece); // Déclenche le useEffect pour mettre à jour grid
+            }
             if (playerLost)
                 setGameLost(playerLost)
         })
