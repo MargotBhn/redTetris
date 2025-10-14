@@ -498,23 +498,25 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     }, [toggleTimer]);
 
     // Intervalle pour la mise à jour en temps réel des spectrums
-    useEffect(() => {
-        if (gameLost || !room) return;
+    // TEMPORAIREMENT DÉSACTIVÉ POUR DEBUG
+    // useEffect(() => {
+    //     if (gameLost || !room || pieceIndex < 0) return;
 
-        // Démarrer l'intervalle de mise à jour en temps réel (toutes les 200ms)
-        realtimeSpectrumIntervalRef.current = setInterval(() => {
-            if (fixedGridRef.current) {
-                sendSpectrumUpdate(fixedGridRef.current, lastSpectrumRef, room, lastSpectrumUpdateTimeRef);
-            }
-        }, 200);
+    //     // Démarrer l'intervalle de mise à jour en temps réel (toutes les 200ms)
+    //     // Seulement si le jeu a vraiment commencé
+    //     realtimeSpectrumIntervalRef.current = setInterval(() => {
+    //         if (fixedGridRef.current && pieceIndexRef.current >= 0) {
+    //             sendSpectrumUpdate(fixedGridRef.current, lastSpectrumRef, room, lastSpectrumUpdateTimeRef);
+    //         }
+    //     }, 200);
 
-        return () => {
-            if (realtimeSpectrumIntervalRef.current) {
-                clearInterval(realtimeSpectrumIntervalRef.current);
-                realtimeSpectrumIntervalRef.current = null;
-            }
-        };
-    }, [gameLost, room]);
+    //     return () => {
+    //         if (realtimeSpectrumIntervalRef.current) {
+    //             clearInterval(realtimeSpectrumIntervalRef.current);
+    //             realtimeSpectrumIntervalRef.current = null;
+    //         }
+    //     };
+    // }, [gameLost, room, pieceIndex]);
 
 
     useEffect(() => {
@@ -592,16 +594,16 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
 
     // Envoi initial du spectrum au début du jeu
     useEffect(() => {
-        if (!room || gameLost) return;
+        if (!room || gameLost || pieceIndexRef.current < 0) return;
         
-        // Envoyer le spectrum initial
-        const initialSpectrum = calculateSpectrum(grid);
+        // Envoyer le spectrum initial seulement quand le jeu a vraiment commencé
+        const initialSpectrum = calculateSpectrum(fixedGrid);
         const socketId = socketMiddleware.getId();
         if (socketId) {
             socketMiddleware.emitSpectrum(initialSpectrum, socketId);
             lastSpectrumRef.current = initialSpectrum;
         }
-    }, [room]);
+    }, [room, fixedGrid]);
 
 
     return (
