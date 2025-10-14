@@ -8,6 +8,7 @@ import {socketMiddleware, type spectrum} from "../middleware/socketMiddleware.ts
 import Spectrum from "./Spectrum.tsx";
 import EndGame from "./EndGame.tsx";
 import GameWon from "./GameWon.tsx";
+import * as React from "react";
 
 
 // RULES
@@ -148,7 +149,7 @@ function fixPieceIntoGrid(piece: Piece | null, grid: Cell[][]) {
 }
 
 function forcePieceDown(grid: Cell[][], piece: Piece): Piece {
-   const newPiece = copyPiece(piece);
+    const newPiece = copyPiece(piece);
 
     // On descend la pièce ligne par ligne jusqu'à ce qu'elle ne puisse plus descendre
     while (true) {
@@ -273,43 +274,41 @@ function calculateSpectrum(grid: Cell[][]): number[] {
 
 function calculateSpectrumChanges(currentSpectrum: number[], lastSpectrum: number[]): {hasChanges: boolean, changes?: number[]} {
     const hasChanges = currentSpectrum.some((height, index) => height !== lastSpectrum[index]);
-    
+
     if (!hasChanges) {
         return { hasChanges: false };
     }
-    
-    return { 
-        hasChanges: true, 
+
+    return {
+        hasChanges: true,
         changes: currentSpectrum.map((height, index) => height !== lastSpectrum[index] ? height : -1) // -1 signifie pas de changement
     };
 }
 
 // Fonction pour envoyer les changements de spectrum avec throttling
 function sendSpectrumUpdate(
-    grid: Cell[][], 
-    lastSpectrumRef: React.MutableRefObject<number[]>, 
-    room: string | undefined,
-    lastUpdateTimeRef: React.MutableRefObject<number>
+    grid: Cell[][],
+    lastSpectrumRef: React.MutableRefObject<number[]>,
+    lastSpectrumSentRef: React.MutableRefObject<number>,
+    room: string | undefined
 ) {
     if (!room) return;
-    
-    const currentTime = Date.now();
-    const THROTTLE_DELAY = 100; // 100ms minimum entre les updates
-    
-    // Throttling: ne pas envoyer plus d'une fois tous les 100ms
-    if (currentTime - lastUpdateTimeRef.current < THROTTLE_DELAY) {
-        return;
-    }
-    
+
+    const now = Date.now();
+    const timeSinceLastSent = now - lastSpectrumSentRef.current;
+
+    // Throttling : on n'envoie pas plus souvent que SPECTRUM_THROTTLE_MS
+    if (timeSinceLastSent < 200) return;
+
     const currentSpectrum = calculateSpectrum(grid);
     const { hasChanges, changes } = calculateSpectrumChanges(currentSpectrum, lastSpectrumRef.current);
-    
+
     if (hasChanges && changes) {
         const socketId = socketMiddleware.getId();
         if (socketId) {
             socketMiddleware.emitSpectrumUpdate(changes, socketId);
             lastSpectrumRef.current = currentSpectrum;
-            lastUpdateTimeRef.current = currentTime;
+            lastSpectrumSentRef.current = now;
         }
     }
 }
@@ -342,9 +341,9 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
 
     // Ref pour stocker le dernier spectrum envoyé
     const lastSpectrumRef = useRef<number[]>(Array(GRID_WIDTH).fill(0));
-    
-    // Ref pour le throttling des updates de spectrum
-    const lastSpectrumUpdateTimeRef = useRef<number>(0);
+
+    // Throttling pour l'envoi des spectrums
+    const lastSpectrumSentRef = useRef<number>(0);
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
     // On utilise une ref pour savoir si le changement vient d'une garbage line
@@ -376,9 +375,9 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             if (linesCleared > 0) {
                 setScore(prevScore => prevScore + linesCleared)
             }
-            
+
             // Envoyer le spectrum mis à jour quand une pièce est fixée
-            sendSpectrumUpdate(newGrid, lastSpectrumRef, room, lastSpectrumUpdateTimeRef);
+            sendSpectrumUpdate(newGrid, lastSpectrumRef, lastSpectrumSentRef, room);
         }
     }
 
@@ -444,7 +443,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                     }
 
                     // Envoyer le spectrum mis à jour quand une pièce est fixée avec espace
-                    sendSpectrumUpdate(newGrid, lastSpectrumRef, room, lastSpectrumUpdateTimeRef);
+                    sendSpectrumUpdate(newGrid, lastSpectrumRef, lastSpectrumSentRef, room);
 
                     // 3. On redémarre le timer APRÈS (avec un petit délai pour être sûr)
                     setTimeout(() => {
@@ -494,27 +493,6 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         };
     }, [toggleTimer]);
 
-    // Intervalle pour la mise à jour en temps réel des spectrums
-    // TEMPORAIREMENT DÉSACTIVÉ POUR DEBUG
-    // useEffect(() => {
-    //     if (gameLost || !room || pieceIndex < 0) return;
-
-    //     // Démarrer l'intervalle de mise à jour en temps réel (toutes les 200ms)
-    //     // Seulement si le jeu a vraiment commencé
-    //     realtimeSpectrumIntervalRef.current = setInterval(() => {
-    //         if (fixedGridRef.current && pieceIndexRef.current >= 0) {
-    //             sendSpectrumUpdate(fixedGridRef.current, lastSpectrumRef, room, lastSpectrumUpdateTimeRef);
-    //         }
-    //     }, 200);
-
-    //     return () => {
-    //         if (realtimeSpectrumIntervalRef.current) {
-    //             clearInterval(realtimeSpectrumIntervalRef.current);
-    //             realtimeSpectrumIntervalRef.current = null;
-    //         }
-    //     };
-    // }, [gameLost, room, pieceIndex]);
-
 
     useEffect(() => {
         document.addEventListener('keydown', handleKeyDown)
@@ -527,28 +505,31 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                 setPieceIndex(0)
                 setCurrentPiece(pieceBagRef.current[0])
                 setNextPiece(pieceBagRef.current[1])
-
             }
         })
 
+        // ✅ Sécurité : Si après 3 secondes on n'a toujours pas de pièces, on redemande
+        const safetyTimeout = setTimeout(() => {
+            if (pieceIndexRef.current < 0 && room) {
+                console.warn("⚠️ Pièces non reçues après 3s, nouvelle tentative...");
+                socketMiddleware.requestPieceBag(room);
+            }
+        }, 3000);
+
+        // Cleanup du timeout si le composant se démonte
+
         socketMiddleware.onSpectrum((spectrums: spectrum[]) => {
-            setOpponentsSpectrums(spectrums);
+            const mySocketId = socketMiddleware.getId();
+            // Filtrer pour exclure son propre spectrum
+            const filteredSpectrums = spectrums.filter(s => s.socketId !== mySocketId);
+            setOpponentsSpectrums(filteredSpectrums);
         })
 
         socketMiddleware.onSpectrumUpdate((spectrums: spectrum[]) => {
-            // Fusionner avec les spectrums existants pour éviter le clipping
-            setOpponentsSpectrums(prevSpectrums => {
-                const newSpectrums = [...prevSpectrums];
-                spectrums.forEach(updatedSpectrum => {
-                    const index = newSpectrums.findIndex(s => s.socketId === updatedSpectrum.socketId);
-                    if (index >= 0) {
-                        newSpectrums[index] = updatedSpectrum;
-                    } else {
-                        newSpectrums.push(updatedSpectrum);
-                    }
-                });
-                return newSpectrums;
-            });
+            const mySocketId = socketMiddleware.getId();
+            // Filtrer pour exclure son propre spectrum
+            const filteredSpectrums = spectrums.filter(s => s.socketId !== mySocketId);
+            setOpponentsSpectrums(filteredSpectrums);
         })
 
         if (room)
@@ -577,6 +558,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         return () => {
             document.removeEventListener('keydown', handleKeyDown)
             document.removeEventListener('keyup', handleKeyUp)
+            clearTimeout(safetyTimeout) // ✅ Cleanup du timeout
         }
     }, []);
 
@@ -601,8 +583,18 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     }, [currentPiece]);
 
 
-    // Envoi initial du spectrum au début du jeu (géré par le serveur maintenant)
-    // useEffect supprimé car le serveur envoie les spectrums initiaux au démarrage
+    // Envoi initial du spectrum au début du jeu
+    useEffect(() => {
+        if (!room || gameLost) return;
+
+        // Envoyer le spectrum initial
+        const initialSpectrum = calculateSpectrum(grid);
+        const socketId = socketMiddleware.getId();
+        if (socketId) {
+            socketMiddleware.emitSpectrum(initialSpectrum, socketId);
+            lastSpectrumRef.current = initialSpectrum;
+        }
+    }, [room]);
 
 
     return (

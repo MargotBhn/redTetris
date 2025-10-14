@@ -14,32 +14,6 @@ export function updateNewLeader(io: Server, game: Game, socketId: string) {
     io.to(game.roomName).emit("newLeader", socketId);
 }
 
-// export function sendSpectrums(
-//     game: Game,
-//     io: Server,
-//     targetSocket?: Socket
-// ) {
-//     const payload = game.players.map(p => ({
-//         socketId: p.socketId,
-//         name: p.name,
-//         spectrum: Array.isArray((p as any).spectrum) ? (p as any).spectrum : Array(10).fill(0)
-//     }));
-//     if (targetSocket) {
-//         targetSocket.emit('spectrums:update', payload);
-//     } else {
-//         io.to(game.roomName).emit('spectrums:update', payload);
-//     }
-// }
-
-// Helper: chunk an array into bags of size 7
-// function chunkIntoBags<T>(arr: T[], size = 7): T[][] {
-//     const out: T[][] = [];
-//     for (let i = 0; i < arr.length; i += size) {
-//         out.push(arr.slice(i, i + size));
-//     }
-//     return out;
-// }
-
 function countAlivePlayers(players: Player[]) {
     let count = 0
     let lastSocketId = ""
@@ -78,7 +52,7 @@ function getPlayer(socketId: string, game: Game): Player | null {
 }
 
 function isMultiplayer(game:Game){
-    return game.players.length !== 0;
+    return game.players.length > 1; // FIX: était !== 0, mais 1 joueur = solo
 }
 
 function resetGame(game: Game) {
@@ -96,19 +70,23 @@ export function handleGame(
     socket: Socket,
     games: Map<string, Game>,
     io: Server) {
+
     socket.on('startGame', (room: string) => {
         const game = games.get(room);
-        if (game) {
-            game.started = true;
-            game.isMultiplayer = isMultiplayer(game)
-            const pieceBag = game.getPieceBag(0)
-            io.to(room).emit("pieceBag", pieceBag)
-            io.to(room).emit("gameStarts");
-            
-            // Envoyer les spectrums initiaux (vides) à tous les joueurs
-            const initialSpectrums = game.getAllSpectrums();
-            io.to(room).emit('spectrum', initialSpectrums);
+        if (!game) return;
+
+        game.started = true;
+        game.isMultiplayer = isMultiplayer(game);
+
+        // ✅ FIX: Envoyer le premier sac à CHAQUE joueur individuellement
+        for (const player of game.players) {
+            const pieceBag = game.getPieceBag(player.getBagIndex());
+            player.incrementBagIndex();
+            io.to(player.socketId).emit("pieceBag", pieceBag);
         }
+
+        // Ensuite, signaler que le jeu commence
+        io.to(room).emit("gameStarts");
     });
 
     socket.on('requestPieceBag', (room: string) => {
@@ -167,12 +145,12 @@ export function handleGame(
         if (!gameRoom) return;
 
         // Mettre à jour le spectrum avec les changements
-        const hasChanges = gameRoom.updatePlayerSpectrum(data.socketId, data.changes);
-        if (!hasChanges) return; // Éviter les broadcasts inutiles
+        const success = gameRoom.updatePlayerSpectrum(data.socketId, data.changes);
+        if (!success) return;
 
-        // Envoyer seulement les spectrums mis à jour aux autres joueurs (pas à l'expéditeur)
-        const allSpectrums = gameRoom.getAllSpectrums(data.socketId);
-        socket.to(gameRoom.roomName).emit('spectrumUpdate', allSpectrums);
+        // Envoyer les spectrums mis à jour à TOUS les joueurs de la room
+        const allSpectrums = gameRoom.getAllSpectrums();
+        io.to(gameRoom.roomName).emit('spectrumUpdate', allSpectrums);
     });
 
     socket.on('playerLost', (room: string) => {
@@ -198,4 +176,3 @@ export function handleGame(
     })
 
 }
-
