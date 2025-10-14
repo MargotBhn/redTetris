@@ -284,13 +284,22 @@ function calculateSpectrumChanges(currentSpectrum: number[], lastSpectrum: numbe
     };
 }
 
-// Fonction pour envoyer les changements de spectrum
+// Fonction pour envoyer les changements de spectrum avec throttling
 function sendSpectrumUpdate(
     grid: Cell[][], 
     lastSpectrumRef: React.MutableRefObject<number[]>, 
-    room: string | undefined
+    room: string | undefined,
+    lastUpdateTimeRef: React.MutableRefObject<number>
 ) {
     if (!room) return;
+    
+    const currentTime = Date.now();
+    const THROTTLE_DELAY = 100; // 100ms minimum entre les updates
+    
+    // Throttling: ne pas envoyer plus d'une fois tous les 100ms
+    if (currentTime - lastUpdateTimeRef.current < THROTTLE_DELAY) {
+        return;
+    }
     
     const currentSpectrum = calculateSpectrum(grid);
     const { hasChanges, changes } = calculateSpectrumChanges(currentSpectrum, lastSpectrumRef.current);
@@ -300,6 +309,7 @@ function sendSpectrumUpdate(
         if (socketId) {
             socketMiddleware.emitSpectrumUpdate(changes, socketId);
             lastSpectrumRef.current = currentSpectrum;
+            lastUpdateTimeRef.current = currentTime;
         }
     }
 }
@@ -332,6 +342,12 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
 
     // Ref pour stocker le dernier spectrum envoyé
     const lastSpectrumRef = useRef<number[]>(Array(GRID_WIDTH).fill(0));
+    
+    // Ref pour le throttling des updates de spectrum
+    const lastSpectrumUpdateTimeRef = useRef<number>(0);
+    
+    // Ref pour l'intervalle de mise à jour en temps réel
+    const realtimeSpectrumIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Quand on fixe la grid (une piece est tombee, on met a jour la ref)
     // On utilise une ref pour savoir si le changement vient d'une garbage line
@@ -365,7 +381,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             }
             
             // Envoyer le spectrum mis à jour quand une pièce est fixée
-            sendSpectrumUpdate(newGrid, lastSpectrumRef, room);
+            sendSpectrumUpdate(newGrid, lastSpectrumRef, room, lastSpectrumUpdateTimeRef);
         }
     }
 
@@ -431,7 +447,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                     }
 
                     // Envoyer le spectrum mis à jour quand une pièce est fixée avec espace
-                    sendSpectrumUpdate(newGrid, lastSpectrumRef, room);
+                    sendSpectrumUpdate(newGrid, lastSpectrumRef, room, lastSpectrumUpdateTimeRef);
 
                     // 3. On redémarre le timer APRÈS (avec un petit délai pour être sûr)
                     setTimeout(() => {
@@ -480,6 +496,25 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             }
         };
     }, [toggleTimer]);
+
+    // Intervalle pour la mise à jour en temps réel des spectrums
+    useEffect(() => {
+        if (gameLost || !room) return;
+
+        // Démarrer l'intervalle de mise à jour en temps réel (toutes les 200ms)
+        realtimeSpectrumIntervalRef.current = setInterval(() => {
+            if (fixedGridRef.current) {
+                sendSpectrumUpdate(fixedGridRef.current, lastSpectrumRef, room, lastSpectrumUpdateTimeRef);
+            }
+        }, 200);
+
+        return () => {
+            if (realtimeSpectrumIntervalRef.current) {
+                clearInterval(realtimeSpectrumIntervalRef.current);
+                realtimeSpectrumIntervalRef.current = null;
+            }
+        };
+    }, [gameLost, room]);
 
 
     useEffect(() => {

@@ -84,16 +84,18 @@ class Game {
         const player = this.players.find(p => p.socketId === socketId);
         if (!player) return false;
 
+        let hasChanges = false;
         // Appliquer les changements au spectrum du joueur
         // -1 signifie pas de changement, sinon c'est la nouvelle valeur
         for (let i = 0; i < spectrumChanges.length && i < player.spectrum.length; i++) {
             const changeValue = spectrumChanges[i];
-            if (changeValue !== undefined && changeValue !== -1) {
+            if (changeValue !== undefined && changeValue !== -1 && player.spectrum[i] !== changeValue) {
                 player.spectrum[i] = changeValue;
+                hasChanges = true;
             }
         }
 
-        return true;
+        return hasChanges;
     }
 
     // // Ensure the shared queue has at least `n` items available
