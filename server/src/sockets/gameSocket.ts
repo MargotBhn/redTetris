@@ -53,18 +53,18 @@ function countAlivePlayers(players: Player[]) {
 }
 
 // Return if end of game and winner socket id if multiplayer
-function isEndOfGame(game: Game) : {endOfGame: boolean, winner:string | null} {
+function isEndOfGame(game: Game): { endOfGame: boolean, winner: string | null } {
     const {count, lastSocketId} = countAlivePlayers(game.players);
 
     // if multiplayer, game ends when one player remains
     if (count === 1 && game.isMultiplayer)
-        return {endOfGame: true, winner :lastSocketId}
+        return {endOfGame: true, winner: lastSocketId}
 
     // if solo player, game end when he looses
     if (count === 0)
-        return {endOfGame: true, winner :null}
+        return {endOfGame: true, winner: null}
 
-    return {endOfGame: false, winner :null}
+    return {endOfGame: false, winner: null}
 }
 
 
@@ -77,7 +77,7 @@ function getPlayer(socketId: string, game: Game): Player | null {
     return null;
 }
 
-function isMultiplayer(game:Game){
+function isMultiplayer(game: Game) {
     return game.players.length !== 0;
 }
 
@@ -130,25 +130,24 @@ export function handleGame(
         }
     )
 
-    socket.on('spectrum', (data: { socketId: string, spectrum: number[] }) => {
-        let gameRoom: Game | undefined;
-        for (const [roomName, game] of games.entries()) {
-            if (game.players.some(p => p.socketId === socket.id)) {
-                gameRoom = game;
-                break;
-            }
-        }
+    socket.on('spectrum', (spectrum: number[], room: string) => {
+        console.log('spectrum update received')
 
-        if (!gameRoom) return;
+        const game = games.get(room);
 
-        const player = getPlayer(data.socketId, gameRoom);
+        if (!game) return;
+        const player = getPlayer(socket.id, game);
+
         if (!player) return;
 
-        player.spectrum = data.spectrum;
+        player.spectrum = spectrum;
+        console.log('spectrum update received : player', player.name, spectrum)
 
         // Envoie UNIQUEMENT au joueur qui a émis, pas à toute la room
-        const allSpectrums = gameRoom.getAllSpectrums(socket.id);
-        socket.emit('spectrum', allSpectrums);
+        const allSpectrums = game.getAllSpectrums();
+
+        // socket.emit('spectrum', allSpectrums);
+        io.to(room).emit("spectrums", allSpectrums);
     });
 
     socket.on('playerLost', (room: string) => {

@@ -47,7 +47,7 @@ const createMiddleware = () => {
             socket.on('connect', callback)
         },
 
-        emitJoinRoom: ((room:string, login:string) => {
+        emitJoinRoom: ((room: string, login: string) => {
             if (!socket) return
             socket.emit('joinRoom', room, login)
         }),
@@ -57,31 +57,31 @@ const createMiddleware = () => {
             socket.on('joinError', callback)
         },
 
-        onJoinSuccess: (callback: (isLeaderGame : boolean) => void) => {
+        onJoinSuccess: (callback: (isLeaderGame: boolean) => void) => {
             if (!socket) return
             socket.on('joinedSuccess', callback)
         },
 
-        onNewLeader: (callback: (socketIdLeader : string) => void) => {
+        onNewLeader: (callback: (socketIdLeader: string) => void) => {
             if (!socket) return
             socket.on('newLeader', callback)
         },
 
-        onUpdatePlayerList: (callback: (players:PlayerName[]) => void) => {
+        onUpdatePlayerList: (callback: (players: PlayerName[]) => void) => {
             if (!socket) return
             socket.on('updatePlayersList', callback)
 
         },
 
-        onGameStarts:(callback:()=>void) =>{
+        onGameStarts: (callback: () => void) => {
             if (!socket) return
             socket.on('gameStarts', callback)
         },
 
-        emitStartGame : ((room:string) => {
+        emitStartGame: ((room: string) => {
             if (!socket) return
             socket.emit('startGame', room)
-        }) ,
+        }),
 
 
         // Demande un sac de pièces (7 pieces)
@@ -108,17 +108,15 @@ const createMiddleware = () => {
 
         // Le serveur envoie le spectrum de tous les joueurs
         onSpectrum(callback: (spectrums: spectrum[]) => void) {
+            console.log('On spectrum')
             if (!socket) return;
-            socket.on('spectrum', callback);
+            socket.on('spectrums', callback);
         },
 
         // Le joueur envoie son spectrum
-        emitSpectrum(spectrumData: number[], socketId: string) {
+        emitSpectrum(spectrumData: number[], room: string) {
             if (!socket) return;
-            socket.emit('spectrum', {
-                socketId: socketId,
-                spectrum: spectrumData
-            });
+            socket.emit('spectrum', spectrumData, room);
         },
 
         // le joueur emet pour dire qu'il a perdu la game
@@ -127,19 +125,19 @@ const createMiddleware = () => {
             socket.emit('playerLost', room)
         },
 
-        onEndOfGame: (callback:(winner:string) => void) => {
+        onEndOfGame: (callback: (winner: string) => void) => {
             if (!socket) return
             socket.on('endOfGame', callback)
         },
 
         // leader choose to end the game
-        emitReturnLobby:(room:string) =>{
+        emitReturnLobby: (room: string) => {
             if (!socket) return
             socket.emit('requestReturnLobby', room)
         },
 
         // all players listen are redirected to the waiting room
-        onReturnLobby: (callback : () => void) => {
+        onReturnLobby: (callback: () => void) => {
             if (!socket) return
             socket.on('GoLobby', callback)
         },

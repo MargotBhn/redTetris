@@ -61,7 +61,7 @@ class Game {
             newBag.push(type)
         }
         this.pieceQueue.push(newBag);
-     }
+    }
 
     getPieceBag(index: number) {
         if (index == this.pieceQueue.length - 1) {
@@ -70,15 +70,33 @@ class Game {
         return this.pieceQueue[index];
     }
 
-    getAllSpectrums(excludeSocketId?: string) {
-        return this.players
-            .filter(p => p.socketId !== excludeSocketId)
-            .map(p => ({
-                socketId: p.socketId,
-                username: p.name,
-                spectrum: p.spectrum
-            }));
+    // getAllSpectrums(excludeSocketId?: string) {
+    //     return this.players
+    //         .filter(p => p.socketId !== excludeSocketId)
+    //         .map(p => ({
+    //             socketId: p.socketId,
+    //             username: p.name,
+    //             spectrum: p.spectrum
+    //         }));
+    // }
+    getAllSpectrums() {
+        return this.players.map((player => {
+            return {
+                socketId: player.socketId,
+                username: player.name,
+                spectrum: player.spectrum,
+            }
+        }))
     }
+
+    //     return game.players
+    //         .filter(p => p.socketId !== excludeSocketId)
+    //         .map(p => ({
+    //             socketId: p.socketId,
+    //             username: p.name,
+    //             spectrum: p.spectrum
+    //         }));
+    // }
 
     // // Ensure the shared queue has at least `n` items available
     // ensureTypes(n: number) {

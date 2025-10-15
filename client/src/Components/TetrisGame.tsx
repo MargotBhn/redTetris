@@ -309,6 +309,12 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             setPieceIndex(prevPieceIndex => prevPieceIndex + 1)
         }
         isGarbageUpdateRef.current = false;
+        const mySpectrum = calculateSpectrum(fixedGrid);
+        if (room)
+            socketMiddleware.emitSpectrum(mySpectrum, room);
+        console.log('emit my spectrum', mySpectrum);
+
+
     }, [fixedGrid])
 
 
@@ -414,9 +420,9 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             setNextPiece(pieceBagRef.current[pieceIndex + 1])
         }
 
-
+        console.log('pieceIndex', pieceIndex)
         // get new bag
-        if (pieceIndex % 7 >= 5 && pieceBagRef.current?.length <= pieceIndex + 3 && room) {
+        if (room && (pieceIndex <= 0 || (pieceIndex % 7 >= 5 && pieceBagRef.current?.length <= pieceIndex + 3))) {
             socketMiddleware.requestPieceBag(room)
         }
     }, [pieceIndex]);
@@ -457,7 +463,10 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         })
 
         socketMiddleware.onSpectrum((spectrums: spectrum[]) => {
-            setOpponentsSpectrums(spectrums);
+            const mySocketId = socketMiddleware.getId()
+            const spectrumExceptMine = spectrums.filter(spectrum => spectrum.socketId != mySocketId)
+            setOpponentsSpectrums(spectrumExceptMine);
+            console.log('spectrums received', spectrumExceptMine);
         })
 
         if (room)
@@ -513,19 +522,19 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     }, [currentPiece]);
 
 
-    useEffect(() => {
-        if (!room || gameLost) return;
-
-        const spectrumInterval = setInterval(() => {
-            const mySpectrum = calculateSpectrum(grid);
-            const socketId = socketMiddleware.getId();
-            if (socketId) {
-                socketMiddleware.emitSpectrum(mySpectrum, socketId);
-            }
-        }, 100);
-
-        return () => clearInterval(spectrumInterval);
-    }, [grid, room, gameLost]);
+    // useEffect(() => {
+    //     if (!room || gameLost) return;
+    //
+    //     const spectrumInterval = setInterval(() => {
+    //         const mySpectrum = calculateSpectrum(grid);
+    //         const socketId = socketMiddleware.getId();
+    //         if (socketId) {
+    //             socketMiddleware.emitSpectrum(mySpectrum, socketId);
+    //         }
+    //     }, 100);
+    //
+    //     return () => clearInterval(spectrumInterval);
+    // }, [grid, room, gameLost]);
 
 
     return (
@@ -553,10 +562,12 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                         }}
                     >
                         {opponentsSpectrums.map(spectrum => (
-                            <Spectrum
-                                playerName={spectrum.username}
-                                heights={spectrum.spectrum}
-                            />
+                            <div key={spectrum.socketId}>
+                                <Spectrum
+                                    playerName={spectrum.username}
+                                    heights={spectrum.spectrum}
+                                />
+                            </div>
                         ))}
                     </div>
 
