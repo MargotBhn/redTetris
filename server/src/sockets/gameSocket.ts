@@ -14,32 +14,6 @@ export function updateNewLeader(io: Server, game: Game, socketId: string) {
     io.to(game.roomName).emit("newLeader", socketId);
 }
 
-// export function sendSpectrums(
-//     game: Game,
-//     io: Server,
-//     targetSocket?: Socket
-// ) {
-//     const payload = game.players.map(p => ({
-//         socketId: p.socketId,
-//         name: p.name,
-//         spectrum: Array.isArray((p as any).spectrum) ? (p as any).spectrum : Array(10).fill(0)
-//     }));
-//     if (targetSocket) {
-//         targetSocket.emit('spectrums:update', payload);
-//     } else {
-//         io.to(game.roomName).emit('spectrums:update', payload);
-//     }
-// }
-
-// Helper: chunk an array into bags of size 7
-// function chunkIntoBags<T>(arr: T[], size = 7): T[][] {
-//     const out: T[][] = [];
-//     for (let i = 0; i < arr.length; i += size) {
-//         out.push(arr.slice(i, i + size));
-//     }
-//     return out;
-// }
-
 function countAlivePlayers(players: Player[]) {
     let count = 0
     let lastSocketId = ""

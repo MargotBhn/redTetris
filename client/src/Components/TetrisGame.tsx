@@ -478,7 +478,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             currentPieceRef.current = newPiece
             setFixedGrid(newGrid);
             if (newPiece) {
-                setCurrentPiece(newPiece); // Déclenche le useEffect pour mettre à jour grid
+                setCurrentPiece(newPiece);
             }
             if (playerLost)
                 setGameLost(playerLost)
@@ -516,22 +516,6 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             setGrid(getNewGrid(fixedGrid, currentPiece))
         }
     }, [currentPiece]);
-
-
-    // useEffect(() => {
-    //     if (!room || gameLost) return;
-    //
-    //     const spectrumInterval = setInterval(() => {
-    //         const mySpectrum = calculateSpectrum(grid);
-    //         const socketId = socketMiddleware.getId();
-    //         if (socketId) {
-    //             socketMiddleware.emitSpectrum(mySpectrum, socketId);
-    //         }
-    //     }, 100);
-    //
-    //     return () => clearInterval(spectrumInterval);
-    // }, [grid, room, gameLost]);
-
 
     return (
 

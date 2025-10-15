@@ -142,12 +142,6 @@ const createMiddleware = () => {
             socket.on('GoLobby', callback)
         },
 
-        // // Stoppe l'écoute du sac de pièces
-        // offPieceBag: (callback: (bag: ServerPieceType[]) => void) => {
-        //     if (!socket) return
-        //     socket.off('pieceBag', callback)
-        // },
-
 
         disconnect: () => {
             if (socket) {
