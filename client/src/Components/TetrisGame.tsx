@@ -312,8 +312,6 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         const mySpectrum = calculateSpectrum(fixedGrid);
         if (room)
             socketMiddleware.emitSpectrum(mySpectrum, room);
-        console.log('emit my spectrum', mySpectrum);
-
 
     }, [fixedGrid])
 
@@ -420,7 +418,6 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             setNextPiece(pieceBagRef.current[pieceIndex + 1])
         }
 
-        console.log('pieceIndex', pieceIndex)
         // get new bag
         if (room && (pieceIndex <= 0 || (pieceIndex % 7 >= 5 && pieceBagRef.current?.length <= pieceIndex + 3))) {
             socketMiddleware.requestPieceBag(room)
@@ -454,7 +451,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         socketMiddleware.onPieceBag((bag: PieceType[]) => {
             const newBag: Piece[] = bag.map((piece: PieceType) => createPiece(piece))
             pieceBagRef.current = [...pieceBagRef.current, ...newBag]
-            if (pieceIndexRef.current < 0) {
+            if (pieceIndexRef.current <= 0) {
                 setPieceIndex(0)
                 setCurrentPiece(pieceBagRef.current[0])
                 setNextPiece(pieceBagRef.current[1])
@@ -466,7 +463,6 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             const mySocketId = socketMiddleware.getId()
             const spectrumExceptMine = spectrums.filter(spectrum => spectrum.socketId != mySocketId)
             setOpponentsSpectrums(spectrumExceptMine);
-            console.log('spectrums received', spectrumExceptMine);
         })
 
         if (room)

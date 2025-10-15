@@ -108,6 +108,7 @@ export function handleGame(
     });
 
     socket.on('requestPieceBag', (room: string) => {
+
         const game = games.get(room);
         if (!game) return
         const player = getPlayer(socket.id, game)
@@ -131,7 +132,6 @@ export function handleGame(
     )
 
     socket.on('spectrum', (spectrum: number[], room: string) => {
-        console.log('spectrum update received')
 
         const game = games.get(room);
 
@@ -141,12 +141,8 @@ export function handleGame(
         if (!player) return;
 
         player.spectrum = spectrum;
-        console.log('spectrum update received : player', player.name, spectrum)
 
-        // Envoie UNIQUEMENT au joueur qui a émis, pas à toute la room
         const allSpectrums = game.getAllSpectrums();
-
-        // socket.emit('spectrum', allSpectrums);
         io.to(room).emit("spectrums", allSpectrums);
     });
 
