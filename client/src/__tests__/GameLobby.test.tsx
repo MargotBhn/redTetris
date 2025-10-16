@@ -24,6 +24,7 @@ jest.mock("../middleware/socketMiddleware.ts", () => ({
         requestPieceBag: jest.fn(),
         onGarbageLines: jest.fn(),
         onEndOfGame: jest.fn(),
+        emitSpectrum: jest.fn(),
     }
 }));
 

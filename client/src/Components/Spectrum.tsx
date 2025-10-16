@@ -1,9 +1,10 @@
 interface SpectrumProps {
     playerName: string,
     heights: number[],
+    isAlive: boolean,
 }
 
-export default function Spectrum({playerName, heights}: SpectrumProps) {
+export default function Spectrum({playerName, heights, isAlive}: SpectrumProps) {
     const maxHeight = 20;
     const cellSize = "w-2 h-3"
 
@@ -18,7 +19,7 @@ export default function Spectrum({playerName, heights}: SpectrumProps) {
                                 key={row}
                                 className={`${cellSize} ${
                                     row < height
-                                        ? 'bg-blue-400'
+                                        ? (isAlive ? 'bg-blue-400' : 'bg-red-500')
                                         : 'bg-gray-700'
                                 }`}
                             />

@@ -250,10 +250,6 @@ function addGarbageLine(grid: Cell[][], activePiece: Piece | null, numberLines: 
     return {newGrid, newPiece, playerLost};
 }
 
-interface TetrisGameProps {
-    room: string | undefined,
-    isLeader: boolean,
-}
 
 function calculateSpectrum(grid: Cell[][]): number[] {
     const heights: number[] = Array(GRID_WIDTH).fill(0);
@@ -269,6 +265,11 @@ function calculateSpectrum(grid: Cell[][]): number[] {
     }
 
     return heights;
+}
+
+interface TetrisGameProps {
+    room: string | undefined,
+    isLeader: boolean,
 }
 
 export default function TetrisGame({room, isLeader}: TetrisGameProps) {
@@ -546,6 +547,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                                 <Spectrum
                                     playerName={spectrum.username}
                                     heights={spectrum.spectrum}
+                                    isAlive={spectrum.isAlive}
                                 />
                             </div>
                         ))}

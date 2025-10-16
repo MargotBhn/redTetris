@@ -127,6 +127,9 @@ export function handleGame(
         if (!player) return;
         player.isAlive = false
 
+        const allSpectrums = game.getAllSpectrums();
+        io.to(room).emit("spectrums", allSpectrums);
+
         const {endOfGame, winner} = isEndOfGame(game)
         if (endOfGame) {
             io.to(room).emit("endOfGame", winner);

@@ -65,6 +65,7 @@ class Game {
                 socketId: player.socketId,
                 username: player.name,
                 spectrum: player.spectrum,
+                isAlive: player.isAlive,
             }
         }))
     }

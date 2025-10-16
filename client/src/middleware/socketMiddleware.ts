@@ -29,6 +29,7 @@ export interface spectrum {
     socketId: string;
     username: string;
     spectrum: number[];
+    isAlive: boolean;
 }
 
 const createMiddleware = () => {
