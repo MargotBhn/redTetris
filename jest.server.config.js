@@ -3,7 +3,10 @@ module.exports = {
   testEnvironment: "node",
   roots: ["<rootDir>/server/src"],
   collectCoverage: true,
-  collectCoverageFrom: ["<rootDir>/server/src/**/*.{ts,tsx}"],
+  collectCoverageFrom: [
+      "<rootDir>/server/src/**/*.{ts,tsx}",
+      "!<rootDir>/server/src/index.ts"
+  ],
   coverageDirectory: "<rootDir>/server/coverage",
   coverageThreshold: {
     global: {

@@ -3,7 +3,16 @@ module.exports = {
   testEnvironment: "jsdom",
   roots: ["<rootDir>/client/src"],
   collectCoverage: true,
-  collectCoverageFrom: ["<rootDir>/client/src/**/*.{ts,tsx}"],
+  collectCoverageFrom: [
+      "<rootDir>/client/src/**/*.{ts,tsx}",
+      "!<rootDir>/client/src/main.tsx",  // ✅ Exclure main.tsx
+      "!<rootDir>/client/src/index.tsx", // ✅ Exclure index.tsx (au cas où)
+      "!<rootDir>/client/src/**/*.d.ts", // ✅ Exclure les fichiers de déclaration
+      "!<rootDir>/client/src/vite-env.d.ts", // ✅ Exclure vite-env
+      "!<rootDir>/client/src/setupTests.ts", // ✅ Exclure setupTests
+      "!<rootDir>/client/src/__mocks__/**", // ✅ Exclure les mocks
+      "!<rootDir>/client/src/__tests__/**", // ✅ Exclure les fichiers de tests
+  ],
   coverageDirectory: "<rootDir>/client/coverage",
   coverageThreshold: {
     global: {
