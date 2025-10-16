@@ -14,23 +14,8 @@
  */
 import {io, Socket} from "socket.io-client";
 import type {PlayerName} from "../Components/GameLobby.tsx";
+import type {PieceType, spectrum} from "../types/tetrisTypes.ts";
 
-/**
- * Types des pièces renvoyées par le serveur
- * (DTO minimal pour la génération côté serveur)
- */
-export type PieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
-
-
-/**
- * Données de spectrum envoyées par les autres joueurs
- */
-export interface spectrum {
-    socketId: string;
-    username: string;
-    spectrum: number[];
-    isAlive: boolean;
-}
 
 const createMiddleware = () => {
     let socket: Socket | null = null

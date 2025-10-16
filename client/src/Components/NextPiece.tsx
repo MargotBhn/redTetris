@@ -1,4 +1,5 @@
-import type {Piece} from "./TetrisGame.tsx";
+import type {Piece} from "../types/tetrisTypes.ts";
+
 
 interface NextPieceProps {
     piece: Piece | null;

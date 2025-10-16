@@ -1,13 +1,20 @@
 import {useCallback, useEffect, useRef, useState} from "react";
-import {tetrominos} from "./Pieces.ts";
+import {tetrominos} from "../utils/piecesMatrix.ts";
 import Board from "./Board.tsx";
 import GameOver from "./GameOver.tsx";
 import bgSimple from "../assets/BackgroundSimple.png";
 import NextPiece from "./NextPiece.tsx";
-import {socketMiddleware, type spectrum} from "../middleware/socketMiddleware.ts";
+import {socketMiddleware} from "../middleware/socketMiddleware.ts";
 import Spectrum from "./Spectrum.tsx";
 import EndGame from "./EndGame.tsx";
 import GameWon from "./GameWon.tsx";
+import type {Cell, Piece, PieceType, spectrum} from "../types/tetrisTypes.ts";
+import {calculateSpectrum} from "../utils/spectrum.ts";
+import {copyPiece, createPiece} from "../utils/pieces.ts";
+import {createEmptyGrid, fixPieceIntoGrid, getNewGrid} from "../utils/grid.ts";
+import {addGarbageLine} from "../utils/garbageLines.ts";
+import {forcePieceDown, gameIsLost, testMovementPossible} from "../utils/pieceMouvement.ts";
+import {clearCompleteLines} from "../utils/lines.ts";
 
 
 // RULES
@@ -20,252 +27,10 @@ import GameWon from "./GameWon.tsx";
 // matrix[row][col]   | ->
 // gameGrid[y][x]
 
-const GRID_HEIGHT = 20;
-const GRID_WIDTH = 10;
+export const GRID_HEIGHT = 20;
+export const GRID_WIDTH = 10;
 const FALL_SPEED = 1000;
 
-type PieceType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';
-
-export interface Cell {
-    value: string;
-    color: string;
-    locked: boolean; // pieces posees
-    blocked: boolean; // ligne verouillee par adversaire
-}
-
-interface PiecePosition {
-    x: number,
-    y: number
-}
-
-export interface Piece {
-    type: PieceType,
-    position: PiecePosition
-    rotation: number,
-    matrix: number[][],
-    color: string
-}
-
-function createPiece(pieceType: PieceType) {
-    const spawnY = pieceType == 'I' ? -1 : 0 // On remonte le I de 1, sinon il spawn trop bas
-    return {
-        type: pieceType,
-        position: {x: 3, y: spawnY},
-        rotation: 0,
-        matrix: tetrominos[pieceType][0],
-        color: getCellColor(pieceType),
-    }
-}
-
-function getCellColor(value: string) {
-    const colors: { [key: string]: string } = {
-        'E': 'bg-gray-200', //empty
-        'I': 'bg-cyan-500',
-        'O': 'bg-yellow-500',
-        'T': 'bg-purple-500',
-        'S': 'bg-green-500',
-        'Z': 'bg-red-500',
-        'J': 'bg-blue-500',
-        'L': 'bg-orange-500',
-        'B': 'bg-gray-700', // Blocked
-    };
-    return colors[value];
-}
-
-function createEmptyGrid() {
-    return Array(GRID_HEIGHT).fill(0).map(() => Array(GRID_WIDTH).fill(0).map(() => ({
-        color: "bg-gray-200",
-        value: 'E',
-        locked: false,
-        blocked: false,
-    })));
-}
-
-function copyPiece(piece: Piece) {
-    return {
-        type: piece.type,
-        position: {...piece.position},
-        rotation: piece.rotation,
-        matrix: piece.matrix.map((row) => [...row]),
-        color: piece.color,
-    }
-}
-
-
-function getNewGrid(grid: Cell[][], piece: Piece | null): Cell[][] {
-    if (!piece)
-        return grid
-
-    const newGrid = grid.map(row => row.map(cell => ({...cell})))
-
-    piece.matrix.forEach((row, y) => {
-        row.forEach((cell, x) => {
-            if (cell == 1) {
-                const newY = y + piece.position.y
-                const newX = x + piece.position.x
-
-                newGrid[newY][newX].value = piece.type
-                newGrid[newY][newX].color = getCellColor(piece.type)
-
-            }
-        })
-    })
-    return newGrid
-}
-
-function testMovementPossible(grid: Cell[][], piece: Piece) {
-    for (let y = 0; y < piece.matrix.length; y++) {
-        for (let x = 0; x < piece.matrix[y].length; x++) {
-            if (piece.matrix[y][x] == 1) {
-                const newY = y + piece.position.y
-                const newX = x + piece.position.x
-                if (newY > GRID_HEIGHT - 1 || newY < 0 || newX > GRID_WIDTH - 1 || newX < 0) {
-                    return false
-                }
-                if (grid[newY][newX].value !== 'E')
-                    return false
-            }
-        }
-    }
-    return true
-}
-
-function fixPieceIntoGrid(piece: Piece | null, grid: Cell[][]) {
-    if (!piece) return grid
-    piece.matrix.forEach((row, y) => {
-        row.forEach((cell, x) => {
-            if (cell == 1) {
-                grid[y + piece.position.y][x + piece.position.x] = {
-                    value: piece.type,
-                    color: getCellColor(piece.type),
-                    locked: true,
-                    blocked: false
-                }
-            }
-        })
-    })
-    return grid
-}
-
-function forcePieceDown(grid: Cell[][], piece: Piece): Piece {
-    const newPiece = copyPiece(piece);
-
-    // On descend la pièce ligne par ligne jusqu'à ce qu'elle ne puisse plus descendre
-    while (true) {
-        newPiece.position.y += 1;
-        if (!testMovementPossible(grid, newPiece)) {
-            // On ne peut plus descendre, on remonte d'une ligne
-            newPiece.position.y -= 1;
-            break;
-        }
-    }
-
-    return newPiece;
-}
-
-function gameIsLost(grid: Cell[][], piece: Piece | null) {
-    if (!piece)
-        return false
-
-    for (let y = 0; y < piece.matrix.length; y++) {
-        for (let x = 0; x < piece.matrix[y].length; x++) {
-            if (piece?.matrix[y][x] == 1) {
-                if (grid[y + piece?.position.y][x + piece?.position.x].value !== 'E') {
-                    return true
-                }
-            }
-        }
-    }
-    return false
-}
-
-function clearCompleteLines(grid: Cell[][], room: string | undefined) {
-    let linesCleared = 0;
-    const newGrid = grid.filter((row) => {
-        const isComplete = row.every(cell => cell.value !== 'E');
-        const hasBlockedCell = row.some(cell => cell.blocked || cell.value === 'B');
-        if (isComplete && !hasBlockedCell) {
-            linesCleared++;
-            return false; // on supprime cette ligne
-        }
-        return true; // sinon on la garde
-    });
-
-    // On complète la grille pour garder la même hauteur
-    while (newGrid.length < GRID_HEIGHT) {
-        newGrid.unshift(
-            Array(GRID_WIDTH).fill(0).map(() => ({
-                color: "bg-gray-200",
-                value: 'E',
-                locked: false,
-                blocked: false,
-            }))
-        );
-    }
-    if (linesCleared > 1 && room) {
-        socketMiddleware.sendGarbageLines(linesCleared - 1, room);
-    }
-    return {newGrid, linesCleared};
-}
-
-function addGarbageLine(grid: Cell[][], activePiece: Piece | null, numberLines: number): {
-    newGrid: Cell[][],
-    newPiece: Piece | null,
-    playerLost: boolean,
-} {
-    let playerLost = false;
-
-    // Check if there's no piece on the top lines that will be removed. If so, set GameLost
-    for (let y = 0; y < numberLines; y++) {
-        for (let x = 0; x < GRID_WIDTH; x++) {
-            if (grid[y][x].value !== 'E')
-                playerLost = true
-        }
-    }
-
-    // Copie de la grille
-    const newGrid = grid.slice(numberLines); // supprime les lignes
-
-
-    // Création des lignes bloquées
-    for (let i = 0; i < numberLines; i++) {
-        const blockedRow = Array(GRID_WIDTH).fill(0).map(() => ({
-            value: 'B',
-            color: getCellColor('B'),
-            locked: true,
-            blocked: true,
-        }));
-        newGrid.push(blockedRow);
-    }
-
-
-    // On remonte la pièce active
-    const newPiece = activePiece ? {
-        ...activePiece,
-        position: {...activePiece.position, y: Math.max(0, activePiece.position.y - numberLines)}
-    } : null;
-    if (newPiece?.position.y && newPiece?.position.y < 0) {
-        playerLost = true;
-    }
-    return {newGrid, newPiece, playerLost};
-}
-
-
-function calculateSpectrum(grid: Cell[][]): number[] {
-    const heights: number[] = Array(GRID_WIDTH).fill(0);
-
-    for (let col = 0; col < GRID_WIDTH; col++) {
-        for (let row = 0; row < GRID_HEIGHT; row++) {
-            if (grid[row][col].value !== 'E' && grid[row][col].locked) {
-                // La hauteur est calculée depuis le bas
-                heights[col] = GRID_HEIGHT - row;
-                break; // On a trouvé le bloc le plus haut de cette colonne
-            }
-        }
-    }
-
-    return heights;
-}
 
 interface TetrisGameProps {
     room: string | undefined,

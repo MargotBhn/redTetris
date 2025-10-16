@@ -1,4 +1,5 @@
-import type {Cell} from "./TetrisGame.tsx";
+import type {Cell} from "../types/tetrisTypes.ts";
+
 
 interface BoardProps {
     grid: Cell[][]
