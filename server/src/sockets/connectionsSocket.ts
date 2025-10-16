@@ -1,9 +1,15 @@
 import Game from "../classes/Game.js";
 import {Server, Socket} from "socket.io";
 import Player from "../classes/Player.js";
-import {sendListPlayers, updateNewLeader} from "./gameSocket.js";
-import player from "../classes/Player.js";
+import {updateNewLeader} from "./gameSocket.js";
 
+function sendListPlayers(
+    game: Game,
+    io: Server,
+) {
+    const players = game.players.map(player => ({name: player.name, socketId: player.socketId}));
+    io.to(game.roomName).emit("updatePlayersList", players);
+}
 
 export function handlePlayerConnection(
     socket: Socket,

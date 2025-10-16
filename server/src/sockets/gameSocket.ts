@@ -1,70 +1,11 @@
 import {Server, Socket} from "socket.io";
 import Game from "../classes/Game.js";
-import Player from "../classes/Player";
 
-export function sendListPlayers(
-    game: Game,
-    io: Server,
-) {
-    const players = game.players.map(player => ({name: player.name, socketId: player.socketId}));
-    io.to(game.roomName).emit("updatePlayersList", players);
-}
 
 export function updateNewLeader(io: Server, game: Game, socketId: string) {
     io.to(game.roomName).emit("newLeader", socketId);
 }
 
-function countAlivePlayers(players: Player[]) {
-    let count = 0
-    let lastSocketId = ""
-    for (const player of players) {
-        if (player.isAlive) {
-            count += 1;
-            lastSocketId = player.socketId
-        }
-    }
-    return {count, lastSocketId}
-}
-
-// Return if end of game and winner socket id if multiplayer
-function isEndOfGame(game: Game): { endOfGame: boolean, winner: string | null } {
-    const {count, lastSocketId} = countAlivePlayers(game.players);
-
-    // if multiplayer, game ends when one player remains
-    if (count === 1 && game.isMultiplayer)
-        return {endOfGame: true, winner: lastSocketId}
-
-    // if solo player, game end when he looses
-    if (count === 0)
-        return {endOfGame: true, winner: null}
-
-    return {endOfGame: false, winner: null}
-}
-
-
-function getPlayer(socketId: string, game: Game): Player | null {
-    for (const thisPlayer of game.players) {
-        if (thisPlayer.socketId === socketId) {
-            return thisPlayer;
-        }
-    }
-    return null;
-}
-
-function isMultiplayer(game: Game) {
-    return game.players.length !== 0;
-}
-
-function resetGame(game: Game) {
-    game.pieceQueue = []
-    game.pushNewBagToQueue()
-    for (const player of game.players) {
-        player.isAlive = true;
-        player.spectrum = Array(10).fill(0)
-        player.bagIndex = 0
-    }
-    game.started = false
-}
 
 export function handleGame(
     socket: Socket,
@@ -74,7 +15,7 @@ export function handleGame(
         const game = games.get(room);
         if (game) {
             game.started = true;
-            game.isMultiplayer = isMultiplayer(game)
+            game.checkMultiplayer()
             const pieceBag = game.getPieceBag(0)
             io.to(room).emit("pieceBag", pieceBag)
             io.to(room).emit("gameStarts");
@@ -85,7 +26,7 @@ export function handleGame(
 
         const game = games.get(room);
         if (!game) return
-        const player = getPlayer(socket.id, game)
+        const player = game.getPlayer(socket.id)
         if (!player) return
 
         const pieceBagIndex = player.getBagIndex()
@@ -106,12 +47,10 @@ export function handleGame(
     )
 
     socket.on('spectrum', (spectrum: number[], room: string) => {
-
         const game = games.get(room);
-
         if (!game) return;
-        const player = getPlayer(socket.id, game);
 
+        const player = game.getPlayer(socket.id);
         if (!player) return;
 
         player.spectrum = spectrum;
@@ -123,25 +62,23 @@ export function handleGame(
     socket.on('playerLost', (room: string) => {
         const game = games.get(room);
         if (!game) return
-        const player = getPlayer(socket.id, game)
+        const player = game.getPlayer(socket.id)
         if (!player) return;
         player.isAlive = false
 
         const allSpectrums = game.getAllSpectrums();
         io.to(room).emit("spectrums", allSpectrums);
 
-        const {endOfGame, winner} = isEndOfGame(game)
+        const {endOfGame, winner} = game.isEndOfGame()
         if (endOfGame) {
             io.to(room).emit("endOfGame", winner);
         }
-
     })
 
     socket.on('requestReturnLobby', (room: string) => {
         const game = games.get(room);
-
         if (!game) return
-        resetGame(game);
+        game.resetGame();
         io.to(room).emit("GoLobby")
     })
 
