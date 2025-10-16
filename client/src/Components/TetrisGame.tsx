@@ -143,7 +143,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                     setToggleTimer(prevToggleTimer => !prevToggleTimer)
                     setTimeout(() => fall(newPiece), 0)
                     break;
-                case ' ':
+                case ' ': {
                     // 1. D'abord, on arrête complètement le timer
                     if (timerRef.current) {
                         clearInterval(timerRef.current);
@@ -166,6 +166,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                         setToggleTimer(prevToggleTimer => !prevToggleTimer);
                     }, 50);
                     break;
+                }
             }
         }, []
     )
@@ -275,7 +276,10 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     useEffect(() => {
         if (!gameLost) {
             currentPieceRef.current = currentPiece;
-            if (gameIsLost(fixedGrid, currentPiece)) setGameLost(true)
+            if (gameIsLost(fixedGrid, currentPiece)) {
+                setGameLost(true)
+                fixPieceIntoGrid(currentPieceRef.current, fixedGridRef.current)
+            }
             setGrid(getNewGrid(fixedGrid, currentPiece))
         }
     }, [currentPiece]);

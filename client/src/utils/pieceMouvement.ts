@@ -41,7 +41,7 @@ export function gameIsLost(grid: Cell[][], piece: Piece | null) {
     for (let y = 0; y < piece.matrix.length; y++) {
         for (let x = 0; x < piece.matrix[y].length; x++) {
             if (piece?.matrix[y][x] == 1) {
-                if (grid[y + piece?.position.y][x + piece?.position.x].value !== 'E') {
+                if (grid[y + piece.position.y][x + piece.position.x].value !== 'E') {
                     return true
                 }
             }
