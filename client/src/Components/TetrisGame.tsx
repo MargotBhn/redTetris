@@ -33,7 +33,7 @@ const FALL_SPEED = 1000;
 
 
 interface TetrisGameProps {
-    room: string | undefined,
+    room: string,
     isLeader: boolean,
 }
 
@@ -76,8 +76,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         }
         isGarbageUpdateRef.current = false;
         const mySpectrum = calculateSpectrum(fixedGrid);
-        if (room)
-            socketMiddleware.emitSpectrum(mySpectrum, room);
+        socketMiddleware.emitSpectrum(mySpectrum, room);
 
     }, [fixedGrid])
 
@@ -185,7 +184,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         }
 
         // get new bag
-        if (room && (pieceIndex <= 0 || (pieceIndex % 7 >= 5 && pieceBagRef.current?.length <= pieceIndex + 3))) {
+        if (pieceIndex <= 0 || (pieceIndex % 7 >= 5 && pieceBagRef.current?.length <= pieceIndex + 3)) {
             socketMiddleware.requestPieceBag(room)
         }
     }, [pieceIndex]);
@@ -230,9 +229,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             const spectrumExceptMine = spectrums.filter(spectrum => spectrum.socketId != mySocketId)
             setOpponentsSpectrums(spectrumExceptMine);
         })
-
-        if (room)
-            socketMiddleware.requestPieceBag(room)
+        socketMiddleware.requestPieceBag(room)
 
         socketMiddleware.onGarbageLines((numberLines: number) => {
             isGarbageUpdateRef.current = true;
@@ -264,7 +261,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     }, []);
 
     useEffect(() => {
-        if (gameLost && room) {
+        if (gameLost) {
             socketMiddleware.emitPlayerLost(room)
             document.removeEventListener('keydown', handleKeyDown)
             document.removeEventListener('keyup', handleKeyUp)

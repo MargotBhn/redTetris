@@ -19,8 +19,13 @@ jest.mock("../middleware/socketMiddleware.ts", () => ({
     }
 }));
 
-const renderGame = (props: { room?: string, isLeader?: boolean } = {}) => {
-    return render(<TetrisGame room={props.room} isLeader={props.isLeader ?? false}/>);
+// ?? remplace les valeurs null ou undefined
+// const renderGame = (props: { room?: string, isLeader?: boolean } = {}) => {
+//     return render(<TetrisGame room={props.room ?? "test-room"} isLeader={props.isLeader ?? false}/>);
+// };
+
+const renderGame = (props: { room: string, isLeader: boolean }) => {
+    return render(<TetrisGame room={props.room} isLeader={props.isLeader}/>);
 };
 
 

@@ -130,6 +130,9 @@ export default function GameLobby() {
             </>
         )
     } else if (status === "Game") {
+        if (!room) {
+            return <>Room is undefined</>;
+        }
         return (
             <TetrisGame room={room} isLeader={isLeader}/>
         )
