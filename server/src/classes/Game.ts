@@ -80,7 +80,7 @@ class Game {
     }
 
     checkMultiplayer() {
-        this.isMultiplayer = this.players.length >= 1;
+        this.isMultiplayer = this.players.length > 1;
     }
 
     countAlivePlayers() {

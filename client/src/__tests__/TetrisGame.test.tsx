@@ -404,7 +404,5 @@ describe("TetrisGame", () => {
         })
 
     })
-
-
 })
 
