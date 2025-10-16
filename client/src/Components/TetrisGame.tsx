@@ -69,6 +69,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     const isGarbageUpdateRef = useRef(false);
 
     useEffect(() => {
+        if (gameLost) return
         fixedGridRef.current = fixedGrid
         // Ne pas incrémenter pieceIndex si c'est une garbage line
         if (!isGarbageUpdateRef.current) {
@@ -78,7 +79,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         const mySpectrum = calculateSpectrum(fixedGrid);
         socketMiddleware.emitSpectrum(mySpectrum, room);
 
-    }, [fixedGrid])
+    }, [fixedGrid, gameLost])
 
 
     useEffect(() => {
@@ -101,7 +102,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     }
 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
-            if (!currentPieceRef.current || gameLost) {
+            if (!currentPieceRef.current) {
                 return
             }
             const now = Date.now();
@@ -178,7 +179,7 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     }, [])
 
     useEffect(() => {
-        if (gameLost) return;
+        // if (gameLost) return;
         if (pieceBagRef.current) {
             setCurrentPiece(pieceBagRef.current[pieceIndex])
             setNextPiece(pieceBagRef.current[pieceIndex + 1])
@@ -274,14 +275,14 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
     }, [gameLost]);
 
     useEffect(() => {
-        if (!gameLost) {
-            currentPieceRef.current = currentPiece;
-            if (gameIsLost(fixedGrid, currentPiece)) {
-                setGameLost(true)
-                fixPieceIntoGrid(currentPieceRef.current, fixedGridRef.current)
-            }
-            setGrid(getNewGrid(fixedGrid, currentPiece))
+        currentPieceRef.current = currentPiece;
+        if (gameIsLost(fixedGridRef.current, currentPiece)) {
+            const newFixedGrid = fixPieceIntoGrid(currentPieceRef.current, fixedGridRef.current)
+            const mySpectrum = calculateSpectrum(newFixedGrid);
+            socketMiddleware.emitSpectrum(mySpectrum, room);
+            setGameLost(true)
         }
+        setGrid(getNewGrid(fixedGridRef.current, currentPiece))
     }, [currentPiece]);
 
     return (
@@ -291,7 +292,6 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
             style={{backgroundImage: `url(${bgSimple})`}}
         >
 
-
             <div data-testid="tetris-game" className="flex flex-col items-center justify-center h-screen">
                 <div>{endOfGame && isLeader && room && <EndGame room={room}/>}</div>
                 {gameLost ? (
@@ -299,7 +299,9 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
                 ) : isWinner ? (
                     <GameWon/>
                 ) : null}
+
                 <div className="text-white text-2xl mb-4">Score: {score}</div>
+
                 <div className="flex">
                     {/* Grille de spectrums avec alignement à droite */}
                     <div

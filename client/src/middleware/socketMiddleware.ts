@@ -94,7 +94,6 @@ const createMiddleware = () => {
 
         // Le serveur envoie le spectrum de tous les joueurs
         onSpectrum(callback: (spectrums: spectrum[]) => void) {
-            console.log('On spectrum')
             if (!socket) return;
             socket.on('spectrums', callback);
         },

@@ -106,7 +106,7 @@ class Game {
         this.started = false
     }
 
-    // Returns if end of game and winner socket id if multiplayer
+    // Returns if end of game and returns winner's socketId if multiplayer
     isEndOfGame(): { endOfGame: boolean, winner: string | null } {
         const {count, lastSocketId} = this.countAlivePlayers();
 
