@@ -141,10 +141,10 @@ describe('Game', () => {
             expect(game.isMultiplayer).toBe(true);
         });
 
-        test('checkMultiplayer définit isMultiplayer à true avec 1 joueur', () => {
+        test('checkMultiplayer définit isMultiplayer à false avec 1 joueur', () => {
             game.players = [{ socketId: 'socket-1' } as unknown as Player];
             game.checkMultiplayer();
-            expect(game.isMultiplayer).toBe(true);
+            expect(game.isMultiplayer).toBe(false);
         });
 
         test('checkMultiplayer définit isMultiplayer à false avec 0 joueurs', () => {
