@@ -51,7 +51,7 @@ describe("TetrisGame", () => {
             expect(screen.getByTestId("tetris-game")).toBeInTheDocument();
         });
 
-        test('Un piece s affiche', async () => {
+        test(`Un piece s'affiche`, async () => {
             jest.mocked(socketMiddleware.onPieceBag).mockImplementation((callback) => {
                 callback(bagOfI);
             })

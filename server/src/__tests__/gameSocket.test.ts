@@ -1,5 +1,5 @@
-import { Server, Socket } from 'socket.io';
-import { updateNewLeader, handleGame } from '../sockets/gameSocket';
+import {Server, Socket} from 'socket.io';
+import {updateNewLeader, handleGame} from '../sockets/gameSocket';
 import Game from '../classes/Game';
 
 // Mocks
@@ -23,6 +23,9 @@ describe('gameHandlers', () => {
         } as any;
 
         mockIo = {
+            // mockReturnThis() permet le chaînage : to() retourne mockIo
+            // pour que io.to().emit() fonctionne.
+            // Sans le return this, sur ce chainage on aura un emit sur undefined ce qui ne fonctionne pas
             to: jest.fn().mockReturnThis(),
             emit: jest.fn(),
         } as any;
@@ -36,7 +39,7 @@ describe('gameHandlers', () => {
             getPieceBag: jest.fn().mockReturnValue(['I', 'O', 'T', 'S', 'Z', 'J', 'L']),
             getPlayer: jest.fn(),
             getAllSpectrums: jest.fn().mockReturnValue([]),
-            isEndOfGame: jest.fn().mockReturnValue({ endOfGame: false, winner: null }),
+            isEndOfGame: jest.fn().mockReturnValue({endOfGame: false, winner: null}),
             resetGame: jest.fn(),
             countAlivePlayers: jest.fn(),
         } as any;
@@ -143,10 +146,11 @@ describe('gameHandlers', () => {
 
     describe('handleGame - addGarbageLines', () => {
         test('envoie des lignes garbage à tous les autres joueurs', () => {
-            const mockPlayer1 = { socketId: 'socket-1' };
-            const mockPlayer2 = { socketId: 'socket-2' };
+
+
+            const mockPlayer1 = {socketId: 'test-socket-id'};
+            const mockPlayer2 = {socketId: 'socket-2'};
             mockGame.players = [mockPlayer1 as any, mockPlayer2 as any];
-            // mockSocket.id = 'socket-1';
 
             let addGarbageLinesCallback: any;
             mockSocket.on.mockImplementation((event, callback) => {
@@ -157,14 +161,15 @@ describe('gameHandlers', () => {
             handleGame(mockSocket, games, mockIo);
             addGarbageLinesCallback(3, 'test-room');
 
+            expect(mockIo.to).not.toHaveBeenCalledWith('test-socket-id');
             expect(mockIo.to).toHaveBeenCalledWith('socket-2');
             expect(mockIo.emit).toHaveBeenCalledWith('garbageLines', 3);
         });
 
         test('n\'envoie pas de lignes garbage au joueur qui les crée', () => {
-            const mockPlayer = { socketId: 'socket-1' };
+            const mockPlayer = {socketId: 'socket-1'};
             mockGame.players = [mockPlayer as any];
-            // mockSocket.id = 'socket-1';
+            mockSocket.id = 'socket-1';
 
             let addGarbageLinesCallback: any;
             mockSocket.on.mockImplementation((event, callback) => {
@@ -176,6 +181,7 @@ describe('gameHandlers', () => {
             addGarbageLinesCallback(3, 'test-room');
 
             expect(mockIo.emit).not.toHaveBeenCalledWith('garbageLines', 3);
+
         });
 
         test('ne fait rien si la room n\'existe pas', () => {
@@ -188,7 +194,7 @@ describe('gameHandlers', () => {
             handleGame(mockSocket, games, mockIo);
             addGarbageLinesCallback(3, 'non-existent-room');
 
-            expect(mockGame.players).not.toBeDefined();
+            expect(mockIo.emit).not.toHaveBeenCalledWith('garbageLines', 3);
         });
     });
 
@@ -240,7 +246,7 @@ describe('gameHandlers', () => {
                 isAlive: true,
             };
             mockGame.getPlayer.mockReturnValue(mockPlayer as any);
-            mockGame.isEndOfGame.mockReturnValue({ endOfGame: false, winner: null });
+            mockGame.isEndOfGame.mockReturnValue({endOfGame: false, winner: null});
 
             let playerLostCallback: any;
             mockSocket.on.mockImplementation((event, callback) => {
@@ -264,7 +270,7 @@ describe('gameHandlers', () => {
                 isAlive: true,
             };
             mockGame.getPlayer.mockReturnValue(mockPlayer as any);
-            mockGame.isEndOfGame.mockReturnValue({ endOfGame: true, winner: 'socket-1' });
+            mockGame.isEndOfGame.mockReturnValue({endOfGame: true, winner: 'socket-1'});
 
             let playerLostCallback: any;
             mockSocket.on.mockImplementation((event, callback) => {
@@ -365,7 +371,7 @@ describe('gameHandlers', () => {
             expect(mockGame.getAllSpectrums).toHaveBeenCalled();
 
             // 4. Un joueur perd
-            mockGame.isEndOfGame.mockReturnValue({ endOfGame: false, winner: null });
+            mockGame.isEndOfGame.mockReturnValue({endOfGame: false, winner: null});
             callbacks['playerLost']!('test-room');
             expect(mockPlayer1.isAlive).toBe(false);
 

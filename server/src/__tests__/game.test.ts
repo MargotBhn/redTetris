@@ -134,15 +134,15 @@ describe('Game', () => {
     describe('État multiplayer', () => {
         test('checkMultiplayer définit isMultiplayer à true avec 2 joueurs', () => {
             game.players = [
-                { socketId: 'socket-1' } as unknown as Player,
-                { socketId: 'socket-2' } as unknown as Player,
+                {socketId: 'socket-1'} as unknown as Player,
+                {socketId: 'socket-2'} as unknown as Player,
             ];
             game.checkMultiplayer();
             expect(game.isMultiplayer).toBe(true);
         });
 
         test('checkMultiplayer définit isMultiplayer à false avec 1 joueur', () => {
-            game.players = [{ socketId: 'socket-1' } as unknown as Player];
+            game.players = [{socketId: 'socket-1'} as unknown as Player];
             game.checkMultiplayer();
             expect(game.isMultiplayer).toBe(false);
         });
@@ -157,12 +157,12 @@ describe('Game', () => {
     describe('Comptage des joueurs vivants', () => {
         test('countAlivePlayers compte correctement les joueurs vivants', () => {
             game.players = [
-                { socketId: 'socket-1', isAlive: true } as unknown as Player,
-                { socketId: 'socket-2', isAlive: false } as unknown as Player,
-                { socketId: 'socket-3', isAlive: true } as unknown as Player,
+                {socketId: 'socket-1', isAlive: true} as unknown as Player,
+                {socketId: 'socket-2', isAlive: false} as unknown as Player,
+                {socketId: 'socket-3', isAlive: true} as unknown as Player,
             ];
 
-            const { count, lastSocketId } = game.countAlivePlayers();
+            const {count, lastSocketId} = game.countAlivePlayers();
 
             expect(count).toBe(2);
             expect(lastSocketId).toBe('socket-3');
@@ -170,23 +170,23 @@ describe('Game', () => {
 
         test('countAlivePlayers retourne 0 si tous les joueurs sont morts', () => {
             game.players = [
-                { socketId: 'socket-1', isAlive: false } as unknown as Player,
-                { socketId: 'socket-2', isAlive: false } as unknown as Player,
+                {socketId: 'socket-1', isAlive: false} as unknown as Player,
+                {socketId: 'socket-2', isAlive: false} as unknown as Player,
             ];
 
-            const { count } = game.countAlivePlayers();
+            const {count} = game.countAlivePlayers();
 
             expect(count).toBe(0);
         });
 
         test('countAlivePlayers retourne le dernier joueur vivant', () => {
             game.players = [
-                { socketId: 'socket-1', isAlive: true } as unknown as Player,
-                { socketId: 'socket-2', isAlive: false } as unknown as Player,
-                { socketId: 'socket-3', isAlive: false } as unknown as Player,
+                {socketId: 'socket-1', isAlive: true} as unknown as Player,
+                {socketId: 'socket-2', isAlive: false} as unknown as Player,
+                {socketId: 'socket-3', isAlive: false} as unknown as Player,
             ];
 
-            const { count, lastSocketId } = game.countAlivePlayers();
+            const {count, lastSocketId} = game.countAlivePlayers();
 
             expect(count).toBe(1);
             expect(lastSocketId).toBe('socket-1');
@@ -220,11 +220,11 @@ describe('Game', () => {
         test('isEndOfGame retourne true en multijoueur quand 1 joueur reste', () => {
             game.isMultiplayer = true;
             game.players = [
-                { socketId: 'socket-1', isAlive: true } as unknown as Player,
-                { socketId: 'socket-2', isAlive: false } as unknown as Player,
+                {socketId: 'socket-1', isAlive: true} as unknown as Player,
+                {socketId: 'socket-2', isAlive: false} as unknown as Player,
             ];
 
-            const { endOfGame, winner } = game.isEndOfGame();
+            const {endOfGame, winner} = game.isEndOfGame();
 
             expect(endOfGame).toBe(true);
             expect(winner).toBe('socket-1');
@@ -233,11 +233,11 @@ describe('Game', () => {
         test('isEndOfGame retourne false en multijoueur quand 2 joueurs sont vivants', () => {
             game.isMultiplayer = true;
             game.players = [
-                { socketId: 'socket-1', isAlive: true } as unknown as Player,
-                { socketId: 'socket-2', isAlive: true } as unknown as Player,
+                {socketId: 'socket-1', isAlive: true} as unknown as Player,
+                {socketId: 'socket-2', isAlive: true} as unknown as Player,
             ];
 
-            const { endOfGame, winner } = game.isEndOfGame();
+            const {endOfGame, winner} = game.isEndOfGame();
 
             expect(endOfGame).toBe(false);
             expect(winner).toBeNull();
@@ -245,11 +245,11 @@ describe('Game', () => {
 
         test('isEndOfGame retourne true quand aucun joueur n\'est vivant', () => {
             game.players = [
-                { socketId: 'socket-1', isAlive: false } as unknown as Player,
-                { socketId: 'socket-2', isAlive: false } as unknown as Player,
+                {socketId: 'socket-1', isAlive: false} as unknown as Player,
+                {socketId: 'socket-2', isAlive: false} as unknown as Player,
             ];
 
-            const { endOfGame, winner } = game.isEndOfGame();
+            const {endOfGame, winner} = game.isEndOfGame();
 
             expect(endOfGame).toBe(true);
             expect(winner).toBeNull();
@@ -257,9 +257,9 @@ describe('Game', () => {
 
         test('isEndOfGame retourne false en solo si le joueur est vivant', () => {
             game.isMultiplayer = false;
-            game.players = [{ socketId: 'socket-1', isAlive: true } as unknown as Player];
+            game.players = [{socketId: 'socket-1', isAlive: true} as unknown as Player];
 
-            const { endOfGame, winner } = game.isEndOfGame();
+            const {endOfGame, winner} = game.isEndOfGame();
 
             expect(endOfGame).toBe(false);
             expect(winner).toBeNull();
@@ -267,9 +267,9 @@ describe('Game', () => {
 
         test('isEndOfGame retourne true en solo si le joueur est mort', () => {
             game.isMultiplayer = false;
-            game.players = [{ socketId: 'socket-1', isAlive: false } as unknown as Player];
+            game.players = [{socketId: 'socket-1', isAlive: false} as unknown as Player];
 
-            const { endOfGame, winner } = game.isEndOfGame();
+            const {endOfGame, winner} = game.isEndOfGame();
 
             expect(endOfGame).toBe(true);
             expect(winner).toBeNull();
@@ -313,15 +313,8 @@ describe('Game', () => {
             // Un joueur perd
             game.players[0]!.isAlive = false;
 
-            // Vérifier que la partie n'est pas terminée
-            let { endOfGame } = game.isEndOfGame();
-            expect(endOfGame).toBe(false);
-
-            // L'autre joueur perd aussi
-            game.players[1]!.isAlive = false;
-
             // Vérifier que la partie est terminée
-            ({ endOfGame } = game.isEndOfGame());
+            let {endOfGame} = game.isEndOfGame();
             expect(endOfGame).toBe(true);
 
             // Réinitialiser pour une nouvelle partie
