@@ -78,7 +78,6 @@ export default function TetrisGame({room, isLeader}: TetrisGameProps) {
         isGarbageUpdateRef.current = false;
         const mySpectrum = calculateSpectrum(fixedGrid);
         socketMiddleware.emitSpectrum(mySpectrum, room);
-
     }, [fixedGrid, gameLost])
 
 
