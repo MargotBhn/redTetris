@@ -167,9 +167,9 @@ describe('gameHandlers', () => {
         });
 
         test('n\'envoie pas de lignes garbage au joueur qui les crée', () => {
-            const mockPlayer = {socketId: 'socket-1'};
+            const mockPlayer = {socketId: 'test-socket-id'};
+
             mockGame.players = [mockPlayer as any];
-            mockSocket.id = 'socket-1';
 
             let addGarbageLinesCallback: any;
             mockSocket.on.mockImplementation((event, callback) => {
